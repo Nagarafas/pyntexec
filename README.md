@@ -19,7 +19,7 @@
 
 - Python 3.7+ (should be fine even though i've only tested it with 3.13.5)
 - [PyInstaller](https://pyinstaller.org/) installed on your system (`pip install pyinstaller`)
-- CustomTkinter, installed with (`pip install customtkinter`)
+- [CustomTkinter](https://customtkinter.tomschimansky.com/), installed with (`pip install customtkinter`)
 
 > **Note:**  
 > Due to the way Pyinstaller is used, this app cannot be compiled, as a result there are no binaries.  
