@@ -18,7 +18,7 @@ import confirmationWindow as confw
 class application(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.version = "1.1.0-dev"
+        self.version = "1.1.0"
         
         self.gridX = 20
         self.gridY = 25
