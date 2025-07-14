@@ -20,9 +20,14 @@ import confirmationWindow as confw
 class application(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.version = "1.0.0"
+        self.version = "1.1.0-dev"
         
-        self.gridSize = 20
+        self.gridX = 20
+        self.gridY = 25
+    
+        self.frameGridX = 20
+        self.frameGridY = 20
+        
         self.mainFrame = ctk.CTkFrame(master = self)
                 
         self.isDark = bool(ctk.AppearanceModeTracker.detect_appearance_mode())
@@ -54,13 +59,19 @@ class application(ctk.CTk):
         self.main()
         
     def gridInit(self):
-        for i in range(self.gridSize):
-            self.grid_rowconfigure(i, weight = 1)
-            self.grid_columnconfigure(i, weight = 1)
+        # Initialize the grid layout for the main window
+        for x in range(self.gridX):
+            self.grid_rowconfigure(x, weight = 1)
+        
+        for y in range(self.gridY):
+            self.grid_columnconfigure(y, weight = 1)
+        
+        # Initialize the grid layout for the main frame
+        for x in range(self.frameGridX):
+            self.mainFrame.grid_rowconfigure(x, weight = 1)
             
-            self.mainFrame.grid_rowconfigure(i, weight = 1)
-            self.mainFrame.grid_columnconfigure(i, weight = 1)
-            
+        for y in range(self.frameGridY):
+            self.mainFrame.grid_columnconfigure(y, weight = 1)
     
     def windowInit(self):
         ctk.set_appearance_mode("system")
@@ -73,7 +84,7 @@ class application(ctk.CTk):
         
         self.title("Pyntexec")
         
-        self.mainFrame.grid(row = 1, column = 1, columnspan=int(self.gridSize-2), rowspan= int(self.gridSize-2), sticky = "nsew")
+        self.mainFrame.grid(row = 1, column = 1, columnspan=int(self.gridX-2), rowspan= int(self.gridY-7), sticky = "nsew")
     
     def chooseFile(self):
         try:
@@ -263,6 +274,8 @@ class application(ctk.CTk):
         self.splashButton.grid(row = 4, column = 15, rowspan= 15, columnspan = 5, pady= (3,0), padx = (5,10), sticky = "nswe")
     
     def main(self):
+        #button and label initialization and grid placement
+        
         self.themeButton = ctk.CTkButton(master = self, width=6, font = (self.font, 12), command=self.changeTheme)
         if self.isDark:
             self.themeButton.configure(text = "🔆")
