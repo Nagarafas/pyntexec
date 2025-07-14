@@ -11,11 +11,16 @@ if operatingSystem() == "Windows":
     from tkinter import filedialog
 else:
     import crossfiledialog
-
-import PyInstaller.__main__ as pyinstaller
-
+    
 import AlertWindow
 import confirmationWindow as confw
+
+try:
+    import pyi_splash
+    pyi_splash.update_text('UI Loaded ...')
+    pyi_splash.close()
+except:
+    print("PyInstaller splash screen not available, continuing without it.")
 
 class application(ctk.CTk):
     def __init__(self, *args, **kwargs):
@@ -31,8 +36,9 @@ class application(ctk.CTk):
         self.mainFrame = ctk.CTkFrame(master = self)
                 
         self.isDark = bool(ctk.AppearanceModeTracker.detect_appearance_mode())
-        
         self.isOnefile = ctk.BooleanVar(value=False)
+        self.isExpanded = False
+        
         # self.hasIcon = ctk.BooleanVar(value=False)
         self.isTerminalVisible = ctk.BooleanVar(value=False)
         self.keepBuild = ctk.BooleanVar(value= False)
@@ -124,14 +130,10 @@ class application(ctk.CTk):
     def changeTheme(self):
         if self.isDark:
             self.themeButton.configure(text = "🌙", font = (self.font, 12))
-            self.icoButton.configure(fg_color="#ffffff", hover_color="#ebebeb", text_color="#222222")
-            self.splashButton.configure(fg_color="#ffffff", hover_color="#ebebeb", text_color="#222222")
             ctk.set_appearance_mode("light")
             self.isDark = False
         else:
             self.themeButton.configure(text = "🔆", font = (self.font, 12))
-            self.icoButton.configure(fg_color="#333333", hover_color="#242424", text_color="#dddddd")
-            self.splashButton.configure(fg_color="#333333", hover_color="#242424", text_color="#dddddd")
             ctk.set_appearance_mode("Dark")
             self.isDark = True
     
@@ -202,10 +204,31 @@ class application(ctk.CTk):
                 
     def build(self):
         # ConsoleWindow.makeWindow(directory = self.workingDir, command = self.getCommand()).main()
+        self.clearConsole()
         def process():
+            self.buildButton.configure(state="disabled")
+            
             if self.fileEntry.get():
-                pyinstaller.run(self.getCommand())
-                                    
+                # pyinstaller.run(self.getCommand())
+                command = self.getCommand()
+                
+                process = sp.Popen("pyinstaller "+" ".join(command), shell=True, stdout=sp.PIPE, stderr=sp.PIPE, text=True)
+                self.statusLabel.configure(text = "Status: Building...")
+                self.progressBar.start()
+
+                # Create threads for reading stdout and stderr
+                stdoutThread = th.Thread(target=self.read_output, args=(process.stdout,), daemon = True)
+                stderrThread = th.Thread(target=self.read_output, args=(process.stderr,), daemon =True)
+
+                stdoutThread.start()
+                stderrThread.start()
+
+                # Wait for the process to finish
+                process.wait()
+                stdoutThread.join()
+                stderrThread.join()
+
+
                 self.statusLabel.configure(text="Status: Finished")
                 self.buildButton.configure(state="normal")
                 self.progressBar.stop()
@@ -213,16 +236,23 @@ class application(ctk.CTk):
                 self.after(2000, self.afterBuild)
                 
                 AlertWindow.ToplevelWindow("Build completed successfully", width=325, height=125)
+                
             else:
                 AlertWindow.ToplevelWindow("Please select a Python file to build", width=300, height=100)
                 self.statusLabel.configure(text="Status: Idle")
                 self.buildButton.configure(state="normal")
                 self.progressBar.set(1)
+                self.progressBar.stop()
             
-            self.buildButton.configure(state="disabled")
-            self.statusLabel.configure(text="Status: Building...")
-            self.progressBar.start()
-            th.Thread(target= process, daemon=True).start()
+            
+        th.Thread(target= process, daemon=True).start()
+    
+    def read_output(self, stream):
+        # Read output from stdout or stderr stream
+        for line in iter(stream.readline, ''):
+            if line:
+                self.after(0, self.updateConsole, line)
+        stream.close()
        
     def afterBuild(self):
         self.progressBar.set(1)
@@ -272,6 +302,29 @@ class application(ctk.CTk):
         self.splashButton.destroy()
         self.splashButton = ctk.CTkButton(master = self.mainFrame, text = "🔳", font=(self.font, 20), command=self.chooseSplashFile, fg_color="#333333", hover_color="#242424")
         self.splashButton.grid(row = 4, column = 15, rowspan= 15, columnspan = 5, pady= (3,0), padx = (5,10), sticky = "nswe")
+        
+    def updateConsole(self, text):
+        self.console.configure(state="normal")
+        self.console.insert('end', text + '\n')
+        self.console.configure(state="disabled")
+        self.console.see('end')
+        
+    def clearConsole(self):
+        self.console.configure(state="normal")
+        self.console.delete('1.0', 'end')
+        self.console.configure(state="disabled")
+        
+    def expand(self):
+        if not self.isExpanded:
+            self.expandButton.configure(text = "↑")
+            self.isExpanded = True
+            self.geometry("1024x625")
+            self.console.grid(row = 21, column = 0, columnspan = 20, rowspan = 4, pady= (3,3), padx = (10, 10), sticky = "nsew")
+        else:
+            self.expandButton.configure(text = "↓")
+            self.isExpanded = False
+            self.geometry("1024x425")
+            self.console.grid_forget()
     
     def main(self):
         #button and label initialization and grid placement
@@ -334,10 +387,10 @@ class application(ctk.CTk):
         self.splashBtnLabel = ctk.CTkLabel(master = self.mainFrame, text="!Splash Image!:", font=(self.font, 20))
         self.splashBtnLabel.grid(row = 3, column = 15, columnspan = 5, pady= (3,0), padx = (5, 10), sticky = "nseww")
 
-        self.icoButton = ctk.CTkButton(master = self.mainFrame, text = "🖼️",font=(self.font, 20), command=self.chooseIcoFile, fg_color="#333333", hover_color="#242424")
+        self.icoButton = ctk.CTkButton(master = self.mainFrame, text = "🖼️",font=(self.font, 20), command=self.chooseIcoFile, fg_color=("#ffffff", "#333333"), hover_color=("#ebebeb", "#242424"), text_color=("#121212", "#ebebeb"))
         self.icoButton.grid(row = 4, column = 10, rowspan= 15, columnspan = 5, pady= (3,0), padx = (5,0), sticky = "nswe")
         
-        self.splashButton = ctk.CTkButton(master = self.mainFrame, text = "🔳", font=(self.font, 20), command=self.chooseSplashFile, fg_color="#333333", hover_color="#242424")
+        self.splashButton = ctk.CTkButton(master = self.mainFrame, text = "🔳", font=(self.font, 20), command=self.chooseSplashFile, fg_color=("#ffffff", "#333333"), hover_color=("#ebebeb", "#242424"), text_color=("#121212", "#ebebeb"))
         self.splashButton.grid(row = 4, column = 15, rowspan= 15, columnspan = 5, pady= (3,0), padx = (5,10), sticky = "nsew")
         
         self.icoClearButton = ctk.CTkButton(master = self.mainFrame, text = "🗑️", font=(self.font, 20), command=self.clearIco, fg_color="#770011", hover_color="#440011")
@@ -350,15 +403,25 @@ class application(ctk.CTk):
         self.dataTextBox.grid(row = 4, column = 0, rowspan = 16, columnspan = 10, pady= (3,3), padx = (10, 0), sticky = "nsew")
         self.dataTextBox.configure(state="disabled")  # Initially disable the textbox
         
+        
         self.buildButton = ctk.CTkButton(master = self, text = "Build", width = 200, font=(self.font, 20), command=lambda:th.Thread(target = self.build, daemon = True).start(), fg_color="#008800", hover_color="#005200")
-        self.buildButton.grid(row = 19, column = 0, columnspan = 3, pady= (3,0), padx = (10,5))
+        self.buildButton.grid(row = 19, column = 0, columnspan = 3, pady= (3,0), padx = (10,0))
+        
+        self.showCommandButton = ctk.CTkButton(master = self, text = "?", font=(self.font, 18), width=25, command=lambda: AlertWindow.ToplevelWindow(titleText="Command", msg=" ".join(self.getCommand()), width=600, height=200))
+        self.showCommandButton.grid(row = 19, column = 3, columnspan = 1, pady= (3,0), padx = (5,5), sticky = "w")
         
         self.statusLabel = ctk.CTkLabel(master = self, text = "Status: Idle", font=(self.font, 20))
         self.statusLabel.grid(row = 19, column = 16, columnspan = 5, pady= (3,0), padx = (5,10), sticky = "w")
         
+        self.expandButton = ctk.CTkButton(master = self, text = "↓", font=(self.font, 18), command=self.expand, width = 25)
+        self.expandButton.grid(row = 20, column = 0, columnspan = 2, pady= (3,3), padx = (10, 0), sticky = "w")
+        
         self.progressBar = ctk.CTkProgressBar(master = self, mode="indeterminate", width=512, progress_color="#228822", height=8)
         self.progressBar.set(0)  # Initialize progress bar to 0
-        self.progressBar.grid(row = 20, column = 0, columnspan = 20, pady= (3,3), padx = (10, 10), sticky = "ew")
+        self.progressBar.grid(row = 20, column = 1, columnspan = 19, pady= (3,3), padx = (50, 10), sticky = "ew")
+        
+        self.console = ctk.CTkTextbox(master = self, font=(self.font, 16), wrap="word", state="disabled")
+        # self.console.grid(row = 21, column = 0, columnspan = 20, rowspan = 4, pady= (3,3), padx = (10, 10), sticky = "nsew")
         
 if __name__ == "__main__":
     app = application()
