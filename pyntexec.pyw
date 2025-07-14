@@ -15,13 +15,6 @@ else:
 import AlertWindow
 import confirmationWindow as confw
 
-try:
-    import pyi_splash
-    pyi_splash.update_text('UI Loaded ...')
-    pyi_splash.close()
-except:
-    print("PyInstaller splash screen not available, continuing without it.")
-
 class application(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
