@@ -18,7 +18,7 @@ class ToplevelWindow(ctk.CTkToplevel):
         self.geometry(f"{width}x{height}")
         self.resizable(False, False)
 
-        self.label = ctk.CTkLabel(self, text= self.message, font=("Arial", 16), wraplength=250)
+        self.label = ctk.CTkLabel(self, text= self.message, font=("Arial", 16), wraplength=width-50)
         self.okButton = ctk.CTkButton(self, text="OK", command=self.destroy)
         if titleText == "About":
             from PIL import Image
