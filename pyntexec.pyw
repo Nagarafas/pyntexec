@@ -36,10 +36,11 @@ class application(ctk.CTk):
         self.mainFrame = ctk.CTkFrame(master = self)
                 
         self.isDark = bool(ctk.AppearanceModeTracker.detect_appearance_mode())
-        self.isOnefile = ctk.BooleanVar(value=False)
         self.isExpanded = False
         
         # self.hasIcon = ctk.BooleanVar(value=False)
+        self.excludeBootlocale = ctk.BooleanVar(value=False)
+        self.isOnefile = ctk.BooleanVar(value=False)
         self.isTerminalVisible = ctk.BooleanVar(value=False)
         self.keepBuild = ctk.BooleanVar(value= False)
         self.data = []
@@ -90,7 +91,7 @@ class application(ctk.CTk):
         
         self.title("Pyntexec")
         
-        self.mainFrame.grid(row = 1, column = 1, columnspan=int(self.gridX-2), rowspan= int(self.gridY-7), sticky = "nsew")
+        self.mainFrame.grid(row = 1, column = 1, columnspan=int(self.gridX-2), rowspan= int(self.gridY-7), sticky = "nsew", padx = (10,10))
     
     def chooseFile(self):
         try:
@@ -139,6 +140,9 @@ class application(ctk.CTk):
     
     def getCommand(self):
         options = []
+        if not(self.excludeBootlocale):
+            options.append('--exclude-module=_bootlocale')
+            
         if self.isOnefile.get():
             options.append("--onefile")
         else:
@@ -149,7 +153,7 @@ class application(ctk.CTk):
             options.append(f'--icon="{self.icoFile}"')
         
         if self.nameEntry.get():
-            options.append(f'--name={self.nameEntry.get()}')
+            options.append(f'--name="{self.nameEntry.get()}"')
             
         if self.isTerminalVisible.get():
             options.append("--console")
@@ -157,18 +161,19 @@ class application(ctk.CTk):
             options.append("--windowed")
         
         if self.splashFile:
-            options.append(f'--splash={self.splashFile}')
+            options.append(f'--splash="{self.splashFile}"')
+        
             
         if self.data:
             if self.dataIsFolder:
-                options.append(f'--add-data={self.data}:./{os.path.basename(self.data)}')
-                print(f'--add-data "{self.data}:./{os.path.basename(self.data)}"')
+                options.append(f'--add-data="{self.data}":"./{os.path.basename(self.data)}"')
+                # print(f'--add-data="{self.data}":./"{os.path.basename(self.data)}"')
             else:
                 options.append(f'--add-data="{",".join(self.data)}:."')
         options.append("--clean")
         
         # buildCommand = f'pyinstaller -y --exclude-module _bootlocale {" ".join(options)} "{self.fileEntry.get()}" --specpath "{self.specPath}"'
-        buildCommand = [self.fileEntry.get(), f'--specpath={self.specPath}', '--exclude-module=_bootlocale'] + options
+        buildCommand = [f'"{self.fileEntry.get()}"', f'--specpath="{self.specPath}"'] + options
         return buildCommand
     
     def addData(self, datatype):
@@ -334,13 +339,13 @@ class application(ctk.CTk):
             self.themeButton.configure(text = "🔆")
         else: self.themeButton.configure(text = "🌙")
         
-        self.themeButton.grid(row = 0, column = 1,  columnspan = 1, pady= (3,0), padx = (0, 0), sticky = "w")
+        self.themeButton.grid(row = 0, column = 1,  columnspan = 1, pady= (3,0), padx = (10, 0), sticky = "w")
         
         self.titleLabel = ctk.CTkLabel(master = self, text = "PYNTEXEC", font = (self.font, 18))
         self.titleLabel.grid(row = 0, column = 0, columnspan = 20)
         
         self.aboutButton = ctk.CTkButton(master = self, text = "About", font = (self.font, 12), command=lambda:AlertWindow.ToplevelWindow(titleText="About", version = self.version, width=325, height=325), width=75)
-        self.aboutButton.grid(row = 0, column = 18, columnspan = 2, pady= (3,0), padx = (5, 0))
+        self.aboutButton.grid(row = 0, column = 18, columnspan = 2, pady= (3,0), padx = (5, 10))
         
         self.fileEntry = ctk.CTkEntry(master = self.mainFrame, placeholder_text="Choose a python file", font = (self.font, 20))
         self.fileEntry.grid(row = 0, column = 0, columnspan = 19, pady= (3,0), padx = (10, 0), sticky = "ew")
@@ -348,20 +353,23 @@ class application(ctk.CTk):
         self.fileButton = ctk.CTkButton(master = self.mainFrame, text = "🔍", font=(self.font, 20), command=self.chooseFile, width=25)
         self.fileButton.grid(row = 0, column = 19, columnspan = 1, pady= (3,0), padx = (5,10), sticky = "ew")
         
-        self.nameEntry = ctk.CTkEntry(master = self.mainFrame, placeholder_text="App Name", font = (self.font, 20))
-        self.nameEntry.grid(row = 1, column = 3, columnspan = 7, pady= (3,0), padx = (55, 0), sticky = "ew")
         
         self.oneFileCheck = ctk.CTkCheckBox(master = self.mainFrame, text = "--onefile", width = 100, font=(self.font, 20), variable=self.isOnefile, onvalue=True, offvalue=False)
-        self.terminalCheck = ctk.CTkCheckBox(master = self.mainFrame, text="--console", width = 100, font=(self.font, 20), variable=self.isTerminalVisible, onvalue=True, offvalue=False)
+        self.terminalCheck = ctk.CTkCheckBox(master = self.mainFrame, text = "--console", width = 70, font=(self.font, 20), variable=self.isTerminalVisible, onvalue=True, offvalue=False)
+        self.exclBootlCheck = ctk.CTkCheckBox(master = self.mainFrame, text = "no _bootlocale", width = 185, font = (self.font, 20), variable = self.excludeBootlocale, onvalue=True, offvalue=False)        
+        
+        self.oneFileCheck.grid(row = 1, column = 0, columnspan = 2, pady= (3,0), padx = (10, 0), sticky = "w",)
+        self.terminalCheck.grid(row = 1, column = 2, columnspan = 2, pady= (3,0), padx = (5, 0), sticky = "w")
+        self.exclBootlCheck.grid(row = 1, column = 3, columnspan = 2, pady= (3,0), padx = (125, 0), sticky = "w")
+        
+        self.nameEntry = ctk.CTkEntry(master = self.mainFrame, placeholder_text="App Name", font = (self.font, 20))
+        self.nameEntry.grid(row = 1, column = 5, columnspan = 5, pady= (3,0), padx = (5, 0), sticky = "ew")
         
         self.openDistDir = ctk.CTkButton(master = self.mainFrame, text="App dir", font=(self.font, 20), command=lambda:sp.Popen(f'explorer "{self.workingDir}\\dist"' if self.platform == "Windows" else f'xdg-open "{self.workingDir}/dist"', shell=True))
         self.openDistDir.grid(row = 1, column = 13, columnspan = 7, pady= (3,0), padx = (5, 10), sticky = "ew" )
         
         self.removeBuildButton = ctk.CTkButton(master = self.mainFrame, text="rm Build dir", font=(self.font, 20), command = lambda :th.Thread(target = self.removeBuildConf, daemon = True).start(), fg_color="#770011", hover_color="#440011")
         self.removeBuildButton.grid(row = 1, column = 11, columnspan = 2, pady= (3,0), padx = (5,0), sticky = "ew" )
-        
-        self.oneFileCheck.grid(row = 1, column = 0, columnspan = 2, pady= (3,0), padx = (10, 5), sticky = "w",)
-        self.terminalCheck.grid(row = 1, column = 2, columnspan = 2, pady= (3,0), padx = (5, 0), sticky = "w")
         
         self.dataLabel = ctk.CTkLabel(master = self.mainFrame, text="Add Data:", font=(self.font, 20))
         self.dataLabel.grid(row = 2, column = 0, columnspan = 2, pady= (3,0), padx = (10, 0), sticky = "w")
@@ -407,7 +415,7 @@ class application(ctk.CTk):
         self.buildButton = ctk.CTkButton(master = self, text = "Build", width = 200, font=(self.font, 20), command=lambda:th.Thread(target = self.build, daemon = True).start(), fg_color="#008800", hover_color="#005200")
         self.buildButton.grid(row = 19, column = 0, columnspan = 3, pady= (3,0), padx = (10,0))
         
-        self.showCommandButton = ctk.CTkButton(master = self, text = "?", font=(self.font, 18), width=25, command=lambda: AlertWindow.ToplevelWindow(titleText="Command", msg=" ".join(self.getCommand()), width=600, height=200))
+        self.showCommandButton = ctk.CTkButton(master = self, text = "?", font=(self.font, 18), width=25, command=lambda: AlertWindow.ToplevelWindow(titleText="Command", msg="pyinstaller "+" ".join(self.getCommand()), width=600, height=200))
         self.showCommandButton.grid(row = 19, column = 3, columnspan = 1, pady= (3,0), padx = (5,5), sticky = "w")
         
         self.statusLabel = ctk.CTkLabel(master = self, text = "Status: Idle", font=(self.font, 20))
