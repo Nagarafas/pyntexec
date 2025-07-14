@@ -2,6 +2,8 @@
 
 **Pyntexec** is a graphical user interface (GUI) tool built with [CustomTkinter](https://customtkinter.tomschimansky.com/) that helps you easily package Python scripts into standalone executables using [PyInstaller](https://pyinstaller.org/). It is designed to simplify the process of building distributable applications from your Python code, providing options for one-file or one-folder builds, icon selection, and more.
 
+![Screenshot-of-app](assets/Pyntexec.png)
+
 ## Features
 
 - Simple and intuitive CustomTkinter-based GUI
