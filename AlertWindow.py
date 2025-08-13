@@ -1,6 +1,9 @@
 import customtkinter as ctk
-import platform
+from platform import system
 from tkinter import PhotoImage
+from os import path
+from PIL import Image
+OPERATING_SYSTEM = system()
 
 class ToplevelWindow(ctk.CTkToplevel):
     def __init__(self, msg: str = "", titleText: str = "Alert", version = "1.0.0", width = 300, height = 125, *args, **kwargs):
@@ -8,24 +11,25 @@ class ToplevelWindow(ctk.CTkToplevel):
         self.message = msg
         self.title(titleText)
         
-        if platform == "Windows":
-            self.iconbitmap(r"assets\pyntexec.ico")
-            self.font = r"assets\Cascadia Code.ttf"
+        if OPERATING_SYSTEM == "Windows":
+            self.iconbitmap(path.join(path.dirname(__file__),"assets","pyntexec.png"))
         else:
-            self.iconphoto(False, PhotoImage(file = "assets/pyntexec.png"))
-            self.font = "assets/Cascadia Code.ttf"
+            self.iconphoto(False, PhotoImage(file= path.join(path.dirname(__file__),"assets","pyntexec.png")))
+            
+        self.spec_path = path.join(path.dirname(__file__),"build")
+        print(self.spec_path)
+        self.font = path.join(path.dirname(__file__),"assets","Cascadia Code.ttf")
         
-        self.geometry(f"{width}x{height}")
+        # self.geometry(f"{width}x{height}")
         self.resizable(False, False)
 
         self.label = ctk.CTkLabel(self, text= self.message, font=("Arial", 16), wraplength=width-50)
         self.okButton = ctk.CTkButton(self, text="OK", command=self.destroy)
         if titleText == "About":
-            from PIL import Image
             self.message = f"Version: {version}\n\nPyntexec is a simple GUI for PyInstaller to build Python scripts into executables.\n\nCreated by Nagarafas_MC"
             self.label.configure(text=self.message)
-            my_image = ctk.CTkImage(light_image=Image.open("assets/pyntexec.png"),
-                                            dark_image=Image.open("assets/pyntexec.png"),
+            my_image = ctk.CTkImage(light_image=Image.open(path.join(path.dirname(__file__),"assets","pyntexec.png")),
+                                            dark_image=Image.open(path.join(path.dirname(__file__),"assets","pyntexec.png")),
                                             size=(100, 100))
 
             image_label = ctk.CTkLabel(self, image=my_image, text="")  # display image with a CTkLabel

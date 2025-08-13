@@ -1,6 +1,8 @@
 import customtkinter as ctk
-import platform
+from platform import system
+from os import path
 from tkinter import PhotoImage
+OPERATING_SYSTEM = system()
 
 class ToplevelWindow(ctk.CTkToplevel):
     def __init__(self, msg: str, command, *args, **kwargs):
@@ -11,14 +13,14 @@ class ToplevelWindow(ctk.CTkToplevel):
         
         self.geometry("325x125")
         self.resizable(False, False)
-        self.platform = platform.system()
         
-        if platform == "Windows":
-            self.iconbitmap(r"assets\pyntexec.ico")
-            self.font = r"assets\Cascadia Code.ttf"
+        if OPERATING_SYSTEM == "Windows":
+            self.iconbitmap(path.join(path.dirname(__file__),"assets","pyntexec.png"))
         else:
-            self.iconphoto(False, PhotoImage(file = "assets/pyntexec.png"))
-            self.font = "assets/Cascadia Code.ttf"
+            self.iconphoto(False, PhotoImage(file= path.join(path.dirname(__file__),"assets","pyntexec.png")))
+            
+        self.spec_path = path.join(path.dirname(__file__),"build")
+        self.font = path.join(path.dirname(__file__),"assets","Cascadia Code.ttf")
         
         self.initUI()
     
