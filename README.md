@@ -24,6 +24,7 @@
 - [CustomTkinter](https://customtkinter.tomschimansky.com/), installed with (`pip install customtkinter`)
 - [PyInstaller](https://pyinstaller.org/) installed on your system (`pip install pyinstaller`)
 - [nuitka](https://nuitka.net) installed on your system (`pip install nuitka`)
+- [pillow](https://pillow.readthedocs.io/en/stable/) installed on your system (`pip install pillow`)
 - [GCC Compiler](https://gcc.gnu.org/install/) installed on your system for nuitka to work
 
 > **Note:**  
@@ -42,7 +43,7 @@ cd pyntexec
 Install dependencies (if needed):
 >pyinstaller and nuitka are installed through the gui if they were not already installed when build is pressed
 ```sh
-pip install customtkinter pyinstaller nuitka
+pip install customtkinter pyinstaller nuitka pillow
 ```
 
 ## Usage
