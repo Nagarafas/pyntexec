@@ -48,7 +48,7 @@ class Application(ctk.CTk):
         self.working_dir = path.dirname(__file__)
         
         if OPERATING_SYSTEM == "Windows":
-            self.iconbitmap(path.join(path.dirname(__file__),"assets","pyntexec.png"))
+            self.wm_iconbitmap(path.join(path.dirname(__file__),"assets","pyntexec.ico"))
         else:
             self.iconphoto(False, PhotoImage(file= path.join(path.dirname(__file__),"assets","pyntexec.png")))
             
