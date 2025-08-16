@@ -11,10 +11,10 @@ import confirmationWindow as confw
 from importlib.util import find_spec
 OPERATING_SYSTEM= operating_system()
 
-if OPERATING_SYSTEM == "Windows":
-    from tkinter import filedialog
-else:
+try:
     import crossfiledialog
+except ImportError:
+    from tkinter import filedialog
 
 # Backends: False = PyInstaller, True = Nuitka 
 

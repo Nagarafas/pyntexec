@@ -2,7 +2,7 @@
 
 **Pyntexec** is a graphical user interface (GUI) tool built with [CustomTkinter](https://customtkinter.tomschimansky.com/) that helps you easily package Python scripts into standalone executables using [PyInstaller](https://pyinstaller.org/) or [nuitka](https://nuitka.net). It is designed to simplify the process of building distributable applications from your Python code, providing options for one-file or one-folder builds, icon selection, and more.
 
-![Screenshot-of-app](assets/Pyntexec.png)
+![Screenshot-of-app](assets/Pyntexec_Preview.png)
 
 ## Features
 
@@ -25,6 +25,8 @@
 - [PyInstaller](https://pyinstaller.org/) installed on your system (`pip install pyinstaller`)
 - [nuitka](https://nuitka.net) installed on your system (`pip install nuitka`)
 - [pillow](https://pillow.readthedocs.io/en/stable/) installed on your system (`pip install pillow`)
+- [crossfiledialog](https://github.com/maikelwever/crossfiledialog) installed on your system (`pip install crossfiledialog`)
+- [pywin32](https://github.com/mhammond/pywin32) !WINDOWS! installed on your system (`pip install pywin32`)
 - [GCC Compiler](https://gcc.gnu.org/install/) installed on your system for nuitka to work
 
 > **Note:**  
@@ -43,7 +45,7 @@ cd pyntexec
 Install dependencies (if needed):
 >pyinstaller and nuitka are installed through the gui if they were not already installed when build is pressed
 ```sh
-pip install customtkinter pyinstaller nuitka pillow
+pip install customtkinter pyinstaller nuitka pillow crossfiledialog pywin32
 ```
 
 ## Usage
@@ -101,3 +103,6 @@ MIT License
 - [CustomTkinter](https://customtkinter.tomschimansky.com/)
 - [PyInstaller](https://pyinstaller.org/)
 - [nuitka](https://nuitka.net)
+- [pillow](https://pillow.readthedocs.io/en/stable/)
+- [crossfiledialog](https://github.com/maikelwever/crossfiledialog)
+    - [pywin32](https://github.com/mhammond/pywin32)
