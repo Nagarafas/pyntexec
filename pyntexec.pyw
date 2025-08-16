@@ -44,6 +44,7 @@ class Application(ctk.CTk):
         self.ico_file = None
         self.file = None
         self.splash_file = None
+        self.tkinter_flag = ctk.BooleanVar(value=False)
         
         self.working_dir = path.dirname(__file__)
         
@@ -99,7 +100,7 @@ class Application(ctk.CTk):
     def choose_ico_file(self) -> None:
         window_title = "Select a .ico File" if OPERATING_SYSTEM == "Windows" else "Select a .png File"
         try:
-            self.ico_file = crossfiledialog.open_file(title=window_title, filter={"ico files":"*.ico"} if OPERATING_SYSTEM == "Windows" else {"png files":"*.png"}, start_dir=self.working_dir)
+            self.ico_file = crossfiledialog.open_file(title=window_title, filter={"icons (.ico .exe)":["*.ico", "*.exe"]} if OPERATING_SYSTEM == "Windows" else {"png files":"*.png"}, start_dir=self.working_dir)
         except:
             self.ico_file = filedialog.askopenfilename(title=window_title, filetypes=[("ico files", "*.ico")] if OPERATING_SYSTEM == "Windows" else [("png files", "*.png")], initialdir=self.working_dir)
         
@@ -187,6 +188,7 @@ class Application(ctk.CTk):
             
         else:
             options = [self.nuitka_onefile.get() if not "onefile-" in self.nuitka_onefile.get() else "--onefile "+self.nuitka_onefile.get(), "--deployment"]
+            options.append("--assume-yes-for-download")
             
             if self.is_terminal_visible.get():
                 options.append("--windows-console-mode=force")
@@ -205,8 +207,11 @@ class Application(ctk.CTk):
                 options.append(f'--output-dir="{self.working_dir}/dist/{path.basename(self.file_entry.get()).split(".")[0]}"')
                 
             if self.ico_file:
-                if OPERATING_SYSTEM == "windows":
-                    options.append(f'--windows-icon-from-ico="{self.ico_file}"')
+                if OPERATING_SYSTEM == "Windows":
+                    if self.ico_file.endswith(".ico"):
+                        options.append(f'--windows-icon-from-ico="{self.ico_file}"')
+                    else:
+                        options.append(f'--windows-icon-template-exe="{self.ico_file}"')
                 elif OPERATING_SYSTEM == "Linux":
                     options.append(f'--linux-icon="{self.ico_file}"')
             
@@ -233,6 +238,9 @@ class Application(ctk.CTk):
                 modules = self.modules_entry.get().split(",") if "," in self.modules_entry.get() else self.modules_entry.get().split(" ")
                 for module in modules:
                     options.append(f'--include-package-data="{module.strip()}"')
+            
+            if self.tkinter_flag.get():
+                options.append("--enable-plugin=tk-inter")
                                         
             return [f'python -m nuitka --main="{self.file_entry.get()}"'] + options
             
@@ -418,6 +426,7 @@ class Application(ctk.CTk):
             try:
                 self.one_file_dropdown.destroy()
                 self.rm_build_check.destroy()
+                self.tkinter_check.destroy()
             except:
                 print("Nuitka specific UI elements not initialized, skipping destruction")
                 try:
@@ -465,13 +474,15 @@ class Application(ctk.CTk):
             # Initialize nuitka specific UI elements
             self.one_file_dropdown = ctk.CTkOptionMenu(master=self.main_frame, values=values, font=(self.font, 12), width=100, dynamic_resizing=False, command=lambda x: self.nuitka_onefile.set("--"+x))
             self.one_file_dropdown.set("standalone")
-            self.rm_build_check = ctk.CTkCheckBox(master=self.main_frame, text="rm Build dir", width=185, font=(self.font, 20), variable=self.keep_build, onvalue=True, offvalue=False)
+            self.rm_build_check = ctk.CTkCheckBox(master=self.main_frame, text="rm Build dir", width=125, font=(self.font, 20), variable=self.keep_build, onvalue=True, offvalue=False)
+            self.tkinter_check = ctk.CTkCheckBox(master=self.main_frame, text="tk-inter", width=70, font=(self.font, 20), variable=self.tkinter_flag, onvalue=True, offvalue=False)
             
             # Element Gridding
             self.one_file_dropdown.grid(row=1, column=0, columnspan=2, pady=(3,0), padx=(10, 0), sticky="w")
             self.terminal_check.grid(row=1, column=2, columnspan=2, pady=(3,0), padx=(5, 0), sticky="w")
-            self.rm_build_check.grid(row=1, column=3, columnspan=2, pady=(3,0), padx=(115, 0), sticky="w")
-            self.name_entry.grid(row=1, column=6, columnspan=9, pady=(3,0), padx=(5, 0), sticky="ew")
+            self.rm_build_check.grid(row=1, column=4, columnspan=2, pady=(3,0), padx=(5, 0), sticky="w")
+            self.tkinter_check.grid(row=1, column=6, columnspan=1, pady=(3,0), padx=(5, 0), sticky="w")
+            self.name_entry.grid(row=1, column=7, columnspan=8, pady=(3,0), padx=(5, 0), sticky="ew")
             
         self.disable_os_specific_elements(bknd)
     

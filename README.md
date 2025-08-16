@@ -20,14 +20,15 @@
 
 ## Requirements
 
-- Python 3.7+ (should be fine even though i've only tested it with 3.13.5)
+- Python 3.12.10
 - [CustomTkinter](https://customtkinter.tomschimansky.com/), installed with (`pip install customtkinter`)
 - [PyInstaller](https://pyinstaller.org/) installed on your system (`pip install pyinstaller`)
 - [nuitka](https://nuitka.net) installed on your system (`pip install nuitka`)
 - [pillow](https://pillow.readthedocs.io/en/stable/) installed on your system (`pip install pillow`)
 - [crossfiledialog](https://github.com/maikelwever/crossfiledialog) installed on your system (`pip install crossfiledialog`)
 - [pywin32](https://github.com/mhammond/pywin32) !WINDOWS! installed on your system (`pip install pywin32`)
-- [GCC Compiler](https://gcc.gnu.org/install/) installed on your system for nuitka to work
+- [GCC Compiler](https://gcc.gnu.org/install/) auto-installs on build with nuitka
+> As of 18-08-2025 nuitka can use gcc only for python 3.12 and older
 
 > **Note:**  
 > This app uses system/env installed modules to bundle/compile python scripts
