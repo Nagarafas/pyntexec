@@ -11,7 +11,6 @@ class ToplevelWindow(ctk.CTkToplevel):
         self.command = command
         self.title("Confirmation")
         
-        self.geometry("325x125")
         self.resizable(False, False)
         
         if OPERATING_SYSTEM == "Windows":
@@ -23,15 +22,21 @@ class ToplevelWindow(ctk.CTkToplevel):
         self.font = "Noto Sans"
         
         self.initUI()
+        self.focus_set()
+        self.grab_set()
     
     def initUI(self):
-        self.label = ctk.CTkLabel(self, text=self.message, font=("Arial", 16), wraplength=200)
+        self.frame = ctk.CTkFrame(self)
+        self.frame.pack_propagate(False)  # Prevent the frame from resizing to fit its contents
+        self.frame.pack(padx=10, pady=10)
+        
+        self.label = ctk.CTkLabel(self.frame, text=self.message, font=("Arial", 16), wraplength=200)
         self.label.grid(row=0, column = 0, columnspan = 3, padx=5, pady=10)
         
-        self.okButton = ctk.CTkButton(self, text="YES", command=self.exeCommand, fg_color="#008800", hover_color="#005200")
+        self.okButton = ctk.CTkButton(self.frame, text="YES", command=self.exeCommand, fg_color="#008800", hover_color="#005200")
         self.okButton.grid(row = 1, column = 0, pady=5, padx=10, sticky="e")
         
-        self.cancelButton = ctk.CTkButton(self, text="NO", command=self.destroy, fg_color="#770011", hover_color="#440011")
+        self.cancelButton = ctk.CTkButton(self.frame, text="NO", command=self.destroy, fg_color="#770011", hover_color="#440011")
         self.cancelButton.grid(row = 1, column = 2, pady=5, padx=10, sticky="w")
     
     def exeCommand(self):

@@ -18,23 +18,29 @@ class ToplevelWindow(ctk.CTkToplevel):
             
         self.spec_path = path.join(path.dirname(__file__),"build")
         print(self.spec_path)
-        self.font  = "Noto Sans" 
-        
-        # self.geometry(f"{width}x{height}")
-        self.resizable(False, False)
 
-        self.label = ctk.CTkLabel(self, text= self.message, font=("Arial", 16), wraplength=width-50)
-        self.okButton = ctk.CTkButton(self, text="OK", command=self.destroy)
+        self.resizable(False, False)
+        self.frame = ctk.CTkFrame(self)
+        self.frame.pack_propagate(True)
+        self.frame.pack(padx=10, pady=10)
+        
+        self.label = ctk.CTkLabel(self.frame, text= self.message, font=("Arial", 16), wraplength=width-50)
+        self.okButton = ctk.CTkButton(self.frame, text="OK", command=self.destroy)
+        
         if titleText == "About":
             self.message = f"Version: {version}\n\nPyntexec is a simple GUI for PyInstaller to build Python scripts into executables.\n\nCreated by Nagarafas_MC"
             self.label.configure(text=self.message)
             my_image = ctk.CTkImage(light_image=Image.open(path.join(path.dirname(__file__),"assets","pyntexec.png")),
                                             dark_image=Image.open(path.join(path.dirname(__file__),"assets","pyntexec.png")),
-                                            size=(100, 100))
+                                            size=(125, 125))
 
-            image_label = ctk.CTkLabel(self, image=my_image, text="")  # display image with a CTkLabel
+            image_label = ctk.CTkLabel(self.frame, image=my_image, text="")  # display image with a CTkLabel
             image_label.pack(pady=10)
-        self.label.pack(padx=5, pady=10)
-        self.okButton.pack(pady=5)
+            
+        self.label.pack(padx=25, pady=5, anchor="center")
+        self.okButton.pack(pady=10, anchor="center", side="bottom")
+        
+        self.focus_set()
+        self.grab_set()
         
             
