@@ -53,7 +53,7 @@ class Application(ctk.CTk):
             self.iconphoto(False, PhotoImage(file= path.join(path.dirname(__file__),"assets","pyntexec.png")))
             
         self.spec_path = path.join(path.dirname(__file__),"build")
-        self.font = path.join(path.dirname(__file__),"assets","Cascadia Code.ttf")
+        self.font = "Noto Sans"
         
         self.window_init()
         self.grid_init()

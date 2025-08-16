@@ -18,7 +18,7 @@ class ToplevelWindow(ctk.CTkToplevel):
             
         self.spec_path = path.join(path.dirname(__file__),"build")
         print(self.spec_path)
-        self.font = path.join(path.dirname(__file__),"assets","Cascadia Code.ttf")
+        self.font  = "Noto Sans" 
         
         # self.geometry(f"{width}x{height}")
         self.resizable(False, False)
