@@ -89,7 +89,7 @@ class Application(ctk.CTk):
     
     def choose_file(self) -> None:
         try:
-            self.file = crossfiledialog.open_file(title="Select a Python File", filter={"Python files (.py .pyw)":"*.py *.pyw"}, start_dir=self.working_dir)
+            self.file = crossfiledialog.open_file(title="Select a Python File", filter={"Python files (.py .pyw)":["*.py", "*.pyw"]}, start_dir=self.working_dir)
         except:
             self.file = filedialog.askopenfilename(title="Select a Python File", filetypes=[("Python files (.py .pyw)", "*.py *.pyw")], initialdir=self.working_dir)
             
@@ -112,7 +112,7 @@ class Application(ctk.CTk):
         
     def choose_splash_file(self) -> None:
         try:
-            self.splash_file = crossfiledialog.open_file(title="Select a .png File", filter={"Images":"*.png *.jpg *.jpeg"}, start_dir=self.working_dir)
+            self.splash_file = crossfiledialog.open_file(title="Select a .png File", filter={"Images (png jpg jpeg)":["*.png", "*.jpg", "*.jpeg"]}, start_dir=self.working_dir)
         except:
             self.splash_file = filedialog.askopenfilename(title="Select a .png File", filetypes=[("Images", "*.png *.jpg *.jpeg")], initialdir=self.working_dir)
         
