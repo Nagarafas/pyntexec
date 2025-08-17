@@ -49,7 +49,7 @@ class Application(ctk.CTk):
          
         # list of all the nuitka onefile options
         self.onefile_values = ["standalone", "onefile", "onefile-no-compression", "onefile-as-archive", "onefile-no-dll"]
-        if OPERATING_SYSTEM == "Linux": values = values[:-1]  # remove "onefile-no-dll" for Linux
+        if OPERATING_SYSTEM == "Linux": self.onefile_values = self.onefile_values[:-1]  # remove "onefile-no-dll" for Linux
         
         self.working_dir_bin = path.dirname(__file__)
         self.working_dir = getcwd()
@@ -157,7 +157,9 @@ class Application(ctk.CTk):
             self.is_dark = True
     
     def find_supported_python(self):
+        #find all python installations and add them to a combobox
         if OPERATING_SYSTEM == "Windows":
+            #windows implementation
             try:
                 out = check_output(["py", "-0p"], text=True)
             except Exception:
@@ -192,7 +194,34 @@ class Application(ctk.CTk):
                 self.selected_python = self.python_picker_entry.get()
                 print(f"Changed selected python to: {self.selected_python}")
         else:
-            print("feature not implemented yet")
+            #linux implementation
+            out = check_output("ls -a .*/bin/python && ls -a /usr/bin/python?.**[0-9] /usr/local/bin/python?.**[0-9]", text=True, shell=True)
+            try:
+                pass
+            except Exception:
+                AlertWindow.ToplevelWindow("No Python installation found\nplease install python 3.12 or older\n\nyou can download python here:\nhttps://www.python.org/downloads/", overide_wraplength=250)
+                return
+    
+            for line in out.splitlines():
+                if not line.strip():
+                    continue
+                tag = line.split("/")[-1] if not "env" in line else line.split("/")[0]
+                python_path = line
+                
+                self.pythons_dict[tag] = python_path
+                    
+            self.python_picker_entry.configure(values=self.pythons_dict)
+            
+            # prefer env
+            if ".venv" in self.pythons_dict or ".env" in self.pythons_dict():
+                self.python_picker_entry.set(".venv")
+            else:
+                self.python_picker_entry.set(f"{next(iter(self.pythons_dict))}")
+                
+            self.selected_python = self.pythons_dict[self.python_picker_entry.get()]
+            
+            print(f"Selected Python: {self.selected_python}")
+                
                 
     def check_installed_modules(self) -> bool:
         out = check_output([self.selected_python,"-m", "pip",  "list"], text = True)
@@ -200,7 +229,7 @@ class Application(ctk.CTk):
         for line in out.splitlines():
             if not line.strip():
                 continue
-            if line.split()[0] != "Package" and line.split()[0] != "-------------------------" :
+            if not "Package" in line.split()[0] and not "-------------------------" in line.split()[0]:
                 modules.append(line.split()[0])
         
         print("\n".join(modules))  
@@ -593,7 +622,7 @@ class Application(ctk.CTk):
         self.data_text_box = ctk.CTkTextbox(master=self.main_frame, font=(self.font[0], self.font_size_percent(20)), width=300, wrap = "word", state = "disabled")
         self.modules_entry = ctk.CTkEntry(master=self.main_frame, placeholder_text="Additional Modules", font=(self.font[0], self.font_size_percent(20)), width=300)
         self.python_picker_entry = ctk.CTkComboBox(master=self.main_frame,font=(self.font[0], self.font_size_percent(20)), command=lambda x:self.set_current_python(x))
-        self.build_button = ctk.CTkButton(master=self, text="Build", width=150, font=self.font, command=lambda: Thread(target=self.build, daemon=True).start(), fg_color="#008800", hover_color="#005200")
+        self.build_button = ctk.CTkButton(master=self, text="Start", width=150, font=self.font, command=lambda: Thread(target=self.build, daemon=True).start(), fg_color="#008800", hover_color="#005200")
         self.show_command_button = ctk.CTkButton(master=self, text="?", font=(self.font[0], self.font_size_percent(10)), width=25, command=lambda: AlertWindow.ToplevelWindow(titleText="Command", msg=" ".join(self.get_command()), overide_wraplength=500))
         self.status_label = ctk.CTkLabel(master=self, text="Status: Idle", font=self.font)
         self.backend_radio_PyInstaller = ctk.CTkRadioButton(master=self, text="PyInstaller", variable=self.backend, value=False, command=lambda: self.backend_specific_ui_switch(bknd=False), font=(self.font[0], self.font_size_percent(10)), width=115)
@@ -649,9 +678,5 @@ class Application(ctk.CTk):
 
 
 if __name__ == "__main__":
-    human_friendly = f"{VERSION_INFO.major}.{VERSION_INFO.minor}.{version_info.micro}"
-    if VERSION_INFO.major <= 3 and VERSION_INFO.minor <=12:
-        app = Application()
-        app.mainloop()
-    else:
-        print(f"Unsupported Python version:{human_friendly}, please run the script using python 3.12 or older")
+    app = Application()
+    app.mainloop()
