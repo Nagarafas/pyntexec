@@ -9,12 +9,11 @@ from PIL import Image
 import AlertWindow
 import confirmationWindow as confw
 from importlib.util import find_spec
+from os import getcwd
 OPERATING_SYSTEM= operating_system()
 
-try:
-    import crossfiledialog
-except ImportError:
-    from tkinter import filedialog
+import crossfiledialog
+from tkinter import filedialog # fallback for crossfiledialog
 
 # Backends: False = PyInstaller, True = Nuitka 
 
@@ -45,8 +44,14 @@ class Application(ctk.CTk):
         self.file = None
         self.splash_file = None
         self.tkinter_flag = ctk.BooleanVar(value=False)
+        self.isolated_flag = ctk.BooleanVar(value=False)
+        # list of all the nuitka onefile options
+        self.onefile_values = ["standalone", "onefile", "onefile-no-compression", "onefile-as-archive", "onefile-no-dll"]
+        if OPERATING_SYSTEM == "Linux": values = values[:-1]  # remove "onefile-no-dll" for Linux
         
-        self.working_dir = path.dirname(__file__)
+        self.working_dir_bin = path.dirname(__file__)
+        self.working_dir = getcwd()
+        self.output_dir = self.working_dir
         
         if OPERATING_SYSTEM == "Windows":
             self.wm_iconbitmap(path.join(path.dirname(__file__),"assets","pyntexec.ico"))
@@ -54,7 +59,7 @@ class Application(ctk.CTk):
             self.iconphoto(False, PhotoImage(file= path.join(path.dirname(__file__),"assets","pyntexec.png")))
             
         self.spec_path = path.join(path.dirname(__file__),"build")
-        self.font = "Noto Sans"
+        self.font = ("Noto Sans", 16)
         
         self.window_init()
         self.grid_init()
@@ -79,8 +84,9 @@ class Application(ctk.CTk):
         ctk.set_appearance_mode("system")
         
         ctk.set_default_color_theme("dark-blue")
-        self.geometry("1024x425")
-        self.minsize(width=1000, height=425)
+        # self.geometry("1024x425")
+        self.geometry("875x325")
+        # self.minsize(width=1000, height=425)
         self.resizable(False, False)
         self.protocol("WM_DELETE_WINDOW", self.destroy)
         
@@ -88,13 +94,23 @@ class Application(ctk.CTk):
         
         self.main_frame.grid(row=1, column=0, columnspan=20, rowspan=18, sticky="nsew", padx=(10,10), pady=(3,0))
     
+    def pick_output(self) -> None:
+        try:
+            self.output_dir = crossfiledialog.choose_folder(title="Select Output Directory")
+        except:
+            self.output_dir = filedialog.askdirectory(title="Select Output Directory", initialdir=self.output_dir)
+        
+        if not self.output_dir:
+            AlertWindow.ToplevelWindow("No output directory selected")
+            return
+    
     def choose_file(self) -> None:
         try:
             self.file = crossfiledialog.open_file(title="Select a Python File", filter={"Python files (.py .pyw)":["*.py", "*.pyw"]}, start_dir=self.working_dir)
         except:
             self.file = filedialog.askopenfilename(title="Select a Python File", filetypes=[("Python files (.py .pyw)", "*.py *.pyw")], initialdir=self.working_dir)
             
-        self.file_entry.delete(first_index=0, last_index=100000)
+        self.file_entry.delete(first_index=0, last_index='end')
         self.file_entry.insert(0, string=self.file)
         
     def choose_ico_file(self) -> None:
@@ -108,7 +124,7 @@ class Application(ctk.CTk):
                                 dark_image=Image.open(self.ico_file),
                                 size=(115, 115))
         self.ico_button.destroy()
-        self.ico_button = ctk.CTkButton(master=self.main_frame, image=self.ico, text="", font=(self.font, 20), command=self.choose_ico_file, fg_color="#333333", hover_color="#242424")
+        self.ico_button = ctk.CTkButton(master=self.main_frame, image=self.ico, text="", font=self.font, command=self.choose_ico_file, fg_color=("#ffffff", "#333333"), hover_color=("#ebebeb", "#242424"), text_color=("#121212", "#ebebeb"))
         self.ico_button.grid(row=3, column=10, rowspan=15, columnspan=5, pady=(3,0), padx=(5,0), sticky="nswe")
         
     def choose_splash_file(self) -> None:
@@ -121,20 +137,21 @@ class Application(ctk.CTk):
                                 dark_image=Image.open(self.splash_file),
                                 size=(115, 115))
         self.splash_button.destroy()
-        self.splash_button = ctk.CTkButton(master=self.main_frame, image=self.splash, text="", font=(self.font, 20), command=self.choose_ico_file, fg_color="#333333", hover_color="#242424")
+        self.splash_button = ctk.CTkButton(master=self.main_frame, image=self.splash,text="", font=self.font, command=self.choose_splash_file, fg_color=("#ffffff", "#333333"), hover_color=("#ebebeb", "#242424"), text_color=("#121212", "#ebebeb"))
         self.splash_button.grid(row=3, column=15, rowspan=15, columnspan=5, pady=(3,0), padx=(5,10), sticky="nswe")
             
     def change_theme(self) -> None:
         if self.is_dark:
-            self.theme_button.configure(text="🌙", font=(self.font, 12))
+            self.theme_button.configure(text="🌙", font=(self.font[0], 12))
             ctk.set_appearance_mode("light")
             self.is_dark = False
         else:
-            self.theme_button.configure(text="🔆", font=(self.font, 12))
+            self.theme_button.configure(text="🔆", font=(self.font[0], 12))
             ctk.set_appearance_mode("Dark")
             self.is_dark = True
     
     def get_command(self) -> list:
+        working_dir =  self.output_dir if len(self.output_dir) > 0 else self.working_dir
         if not self.backend.get():
             options = []
             if not(self.exclude_bootlocale):
@@ -174,13 +191,16 @@ class Application(ctk.CTk):
                         else:
                             options.append(f'--add-data="{data}:{path.basename(data)}"')
             except:
-                AlertWindow.ToplevelWindow("no python file selected", width=300, height=100)
+                AlertWindow.ToplevelWindow("no python file selected")
                 return []
             
             if self.modules_entry.get():
                 modules = self.modules_entry.get().split(",") if "," in self.modules_entry.get() else self.modules_entry.get().split(" ")
                 for module in modules:
                     options.append(f'--hidden-import="{module.strip()}"')
+            
+            if len(self.output_dir.get()) > 0:
+                options.append(f'--distpath="{working_dir}/dist"')
             
             options.append("--clean")
             
@@ -200,11 +220,12 @@ class Application(ctk.CTk):
             
             if self.name_entry.get():
                 options.append(f'--output-filename="{self.name_entry.get()}"')
-                options.append(f'--output-dir="{self.working_dir}/dist/{path.basename(self.name_entry.get())}"')
+                options.append(f'--output-dir="{working_dir}/dist/{path.basename(self.name_entry.get())}"')
+                
             elif options[0] == "--standalone":
-                options.append(f'--output-dir="{self.working_dir}/dist"')
+                options.append(f'--output-dir="{working_dir}/dist"')
             else:
-                options.append(f'--output-dir="{self.working_dir}/dist/{path.basename(self.file_entry.get()).split(".")[0]}"')
+                options.append(f'--output-dir="{working_dir}/dist/{path.basename(self.file_entry.get()).split(".")[0]}"')
                 
             if self.ico_file:
                 if OPERATING_SYSTEM == "Windows":
@@ -231,7 +252,7 @@ class Application(ctk.CTk):
                         else:
                             options.append(f'--include-data-dir="{data}"="{path.basename(data)}"')
             except:
-                AlertWindow.ToplevelWindow("no python file selected", width=300, height=100)
+                AlertWindow.ToplevelWindow("no python file selected")
                 return []
             
             if self.modules_entry.get():
@@ -241,16 +262,12 @@ class Application(ctk.CTk):
             
             if self.tkinter_flag.get():
                 options.append("--enable-plugin=tk-inter")
+                
+            if self.isolated_flag.get():
+                options.append("--python-flag=isolated")
                                         
             return [f'python -m nuitka --main="{self.file_entry.get()}"'] + options
             
-    def backend_module_check(self) -> bool:
-        backend_name = "PyInstaller" if not self.backend.get() else "nuitka"
-        if not find_spec(backend_name):
-            confw.ToplevelWindow(f"{backend_name} module not found, install it using 'pip install {backend_name.lower()}'?", command=lambda: Thread(target=self.run_process, args=("pip install " + backend_name.lower(), "install_backend"), daemon=True).start())
-        else:
-            return True
-    
     def add_data(self, datatype : str) -> None:
         if datatype == "folder":
             try:
@@ -303,7 +320,7 @@ class Application(ctk.CTk):
             self.build_button.configure(state="normal")
             self.progress_bar.stop()
             self.progress_bar.set(1)
-            AlertWindow.ToplevelWindow("backend module successfully installed", width=325, height=125)
+            AlertWindow.ToplevelWindow("backend module successfully installed")
 
         else:
             self.status_label.configure(text="Status: Finished")
@@ -311,11 +328,9 @@ class Application(ctk.CTk):
             self.progress_bar.stop()
             self.progress_bar.set(1)
             self.after(2000, self.after_build)
-            AlertWindow.ToplevelWindow("Build completed successfully", width=325, height=125)
+            AlertWindow.ToplevelWindow("Build completed successfully")
                 
     def build(self) -> None:
-        if not self.backend_module_check():
-            return
         self.clear_console()
         
         if self.file_entry.get():
@@ -323,7 +338,7 @@ class Application(ctk.CTk):
             print(f"Running command: {the_command}")
             Thread(target=self.run_process, args=(the_command,), daemon=True).start()
         else:
-            AlertWindow.ToplevelWindow("Please select a Python file to build", width=300, height=100)
+            AlertWindow.ToplevelWindow("Please select a Python file to build")
             self.status_label.configure(text="Status: Idle")
             self.build_button.configure(state="normal")
             self.progress_bar.set(1)
@@ -338,7 +353,7 @@ class Application(ctk.CTk):
     def after_build(self) -> None:
         self.progress_bar.set(1)
         self.status_label.configure(text="Status: Idle")
-        Popen(f'explorer "{self.working_dir}\\dist"' if OPERATING_SYSTEM == "Windows" else f'xdg-open "{self.working_dir}/dist"', shell=True)
+        Popen(f'explorer "{self.output_dir}\\dist"' if OPERATING_SYSTEM == "Windows" else f'xdg-open "{self.output_dir}/dist"', shell=True)
         self.update()
                 
     def update_text_box(self, text: str) -> None:
@@ -372,15 +387,15 @@ class Application(ctk.CTk):
     
     def clear_ico(self) -> None:
         self.ico_file = None
-        self.ico_button.destroy()
-        self.ico_button = ctk.CTkButton(master=self.main_frame, text="🖼️", font=(self.font, 20), command=self.choose_ico_file, fg_color="#333333", hover_color="#242424")
+        self.ico_button.grid_forget()
+        self.ico_button.configure(text = "🖼️", image = None)
         self.ico_button.grid(row=3, column=10, rowspan=15, columnspan=5, pady=(3,0), padx=(5,0), sticky="nswe")
         self.disable_os_specific_elements(bknd=self.backend.get())
         
     def clear_splash(self) -> None:
         self.splash_file = None
-        self.splash_button.destroy()
-        self.splash_button = ctk.CTkButton(master=self.main_frame, text="🔳", font=(self.font, 20), command=self.choose_splash_file, fg_color="#333333", hover_color="#242424")
+        self.splash_button.grid_forget()
+        self.splash_button.configure(text="🔳", image = None)
         self.splash_button.grid(row=3, column=15, rowspan=15, columnspan=5, pady=(3,0), padx=(5,10), sticky="nsew")
         self.disable_os_specific_elements(bknd=self.backend.get())
         
@@ -399,12 +414,12 @@ class Application(ctk.CTk):
         if not self.is_expanded:
             self.expand_button.configure(text="↑")
             self.is_expanded = True
-            self.geometry("1024x625")
+            self.geometry("875x525")
             self.console.grid(row=21, column=0, columnspan=20, rowspan=4, pady=(3,3), padx=(10, 10), sticky="nsew")
         else:
             self.expand_button.configure(text="↓")
             self.is_expanded = False
-            self.geometry("1024x425")
+            self.geometry("875x325")
             self.console.grid_forget()
     
     def disable_os_specific_elements(self, bknd: bool) -> None:
@@ -417,16 +432,21 @@ class Application(ctk.CTk):
                 self.ico_button.configure(state="normal")
                 self.splash_button.configure(state="disabled")
                 self.terminal_check.configure(state="disabled")
+     
+    def font_size_percent(self, percent: int) -> None:
+        return int(self.font[1] - self.font[1] * (percent / 100))  
                 
     def backend_specific_ui_switch(self, bknd: bool) -> None:
         # Switch between PyInstaller and Nuitka specific UI elements
         # PyInstaller specific UI elements
+        previous_value = self.nuitka_onefile.get().replace("--", "")
         if not bknd:
             # Uninitialize the nuitka specific UI elements
             try:
                 self.one_file_dropdown.destroy()
-                self.rm_build_check.destroy()
-                self.tkinter_check.destroy()
+                self.rm_build_check.grid_forget()
+                self.tkinter_check.grid_forget()
+                self.isolated_check.grid_forget()
             except:
                 print("Nuitka specific UI elements not initialized, skipping destruction")
                 try:
@@ -437,11 +457,6 @@ class Application(ctk.CTk):
                     print("nothing to destroy on first initialization")
             
             self.backend.set(bknd)
-            
-            # Initialize PyInstaller specific UI elements
-            self.one_file_check = ctk.CTkCheckBox(master=self.main_frame, text="--onefile", width=100, font=(self.font, 20), variable=self.is_onefile, onvalue=True, offvalue=False)
-            self.excl_bootl_check = ctk.CTkCheckBox(master=self.main_frame, text="no _bootlocale", width=185, font=(self.font, 20), variable=self.exclude_bootlocale, onvalue=True, offvalue=False)        
-            self.remove_build_button = ctk.CTkButton(master=self.main_frame, text="rm Build dir", font=(self.font, 20), command=lambda: Thread(target=self.remove_build_conf, daemon=True).start(), fg_color="#770011", hover_color="#440011")
             
             # Element Gridding
             self.one_file_check.grid(row=1, column=0, columnspan=2, pady=(3,0), padx=(10, 0), sticky="w")
@@ -454,74 +469,63 @@ class Application(ctk.CTk):
         else:
             try:
                 # Uninitialize the PyInstaller specific UI elements
-                self.one_file_check.destroy()
-                self.excl_bootl_check.destroy()
-                self.remove_build_button.destroy()
+                self.one_file_check.grid_forget()
+                self.excl_bootl_check.grid_forget()
+                self.remove_build_button.grid_forget()
             except:
                 print("PyInstaller specific UI elements not initialized, skipping destruction")
-                try:
-                    self.one_file_dropdown.destroy()
-                    self.rm_build_check.destroy()
-                except:
-                    print("nothing to destroy on first initialization")
                 
             self.backend.set(bknd)
             
-            # list of all the nuitka onefile options
-            values = ["standalone", "onefile", "onefile-no-compression", "onefile-as-archive", "onefile-no-dll"]
-            if OPERATING_SYSTEM == "Linux": values = values[:-1]  # remove "onefile-no-dll" for Linux
-            
-            # Initialize nuitka specific UI elements
-            self.one_file_dropdown = ctk.CTkOptionMenu(master=self.main_frame, values=values, font=(self.font, 12), width=100, dynamic_resizing=False, command=lambda x: self.nuitka_onefile.set("--"+x))
-            self.one_file_dropdown.set("standalone")
-            self.rm_build_check = ctk.CTkCheckBox(master=self.main_frame, text="rm Build dir", width=125, font=(self.font, 20), variable=self.keep_build, onvalue=True, offvalue=False)
-            self.tkinter_check = ctk.CTkCheckBox(master=self.main_frame, text="tk-inter", width=70, font=(self.font, 20), variable=self.tkinter_flag, onvalue=True, offvalue=False)
-            
             # Element Gridding
-            self.one_file_dropdown.grid(row=1, column=0, columnspan=2, pady=(3,0), padx=(10, 0), sticky="w")
-            self.terminal_check.grid(row=1, column=2, columnspan=2, pady=(3,0), padx=(5, 0), sticky="w")
-            self.rm_build_check.grid(row=1, column=4, columnspan=2, pady=(3,0), padx=(5, 0), sticky="w")
-            self.tkinter_check.grid(row=1, column=6, columnspan=1, pady=(3,0), padx=(5, 0), sticky="w")
-            self.name_entry.grid(row=1, column=7, columnspan=8, pady=(3,0), padx=(5, 0), sticky="ew")
+            # self.one_file_dropdown.grid(row=1, column=0, columnspan=1, pady=(3,0), padx=(10, 0), sticky="w")
+            self.terminal_check.grid(row=1, column=1, columnspan=2, pady=(3,0), padx=(5, 0), sticky="w")
+            self.rm_build_check.grid(row=1, column=3, columnspan=2, pady=(3,0), padx=(5, 0), sticky="w")
+            self.tkinter_check.grid(row=1, column=5, columnspan=2, pady=(3,0), padx=(5, 0), sticky="w")
+            self.isolated_check.grid(row=1, column=7, columnspan=1, pady=(3,0), padx=(5, 0), sticky="w")
+            self.name_entry.grid(row=1, column=7, columnspan=8, pady=(3,0), padx=(95, 0), sticky="ew")
+            
+            self.one_file_dropdown = ctk.CTkOptionMenu(master=self.main_frame, values=self.onefile_values, font=(self.font[0], self.font_size_percent(20)), width=100, dynamic_resizing=False, command=lambda x: self.nuitka_onefile.set("--"+x))
+            self.one_file_dropdown.set(previous_value)
+            self.one_file_dropdown.grid(row=1, column=0, columnspan=1, pady=(3,0), padx=(10, 0), sticky="w")
             
         self.disable_os_specific_elements(bknd)
     
     def main(self) -> None:
     # Static UI elements initialization
-        self.theme_button = ctk.CTkButton(master=self, width=6, font=(self.font, 12), command=self.change_theme)
+        self.theme_button = ctk.CTkButton(master=self, width=6, font=(self.font[0], self.font_size_percent(40)), command=self.change_theme)
         if self.is_dark:
             self.theme_button.configure(text="🔆")
         else:
             self.theme_button.configure(text="🌙")
         
-        self.title_label = ctk.CTkLabel(master=self, text="PYNTEXEC", font=(self.font, 18))
-        self.about_button = ctk.CTkButton(master=self, text="About", font=(self.font, 12), command=lambda: AlertWindow.ToplevelWindow(titleText="About", version=self.version, width=325, height=325), width=75)
-        self.file_entry = ctk.CTkEntry(master=self.main_frame, placeholder_text="Choose a python file", font=(self.font, 20))
-        self.file_button = ctk.CTkButton(master=self.main_frame, text="🔍", font=(self.font, 20), command=self.choose_file, width=25)
-        self.terminal_check = ctk.CTkCheckBox(master=self.main_frame, text="Console", width=70, font=(self.font, 20), variable=self.is_terminal_visible, onvalue=True, offvalue=False)
-        self.name_entry = ctk.CTkEntry(master=self.main_frame, placeholder_text="App Name", font=(self.font, 20))
-        self.open_dist_dir = ctk.CTkButton(master=self.main_frame, text="App dir", font=(self.font, 20), command=lambda: Popen(f'explorer "{self.working_dir}\\dist"' if OPERATING_SYSTEM == "Windows" else f'xdg-open "{self.working_dir}/dist"', shell=True))
-        self.data_text_box_label = ctk.CTkLabel(master=self.main_frame, text="Data List:", font=(self.font, 20))
-        self.add_folder_button = ctk.CTkButton(master=self.main_frame, text="Folder", font=(self.font, 20), command=lambda: self.add_data(datatype="folder"))
-        self.add_files_button = ctk.CTkButton(master=self.main_frame, text="Files", font=(self.font, 20), command=lambda: self.add_data(datatype="files"))
-        self.clear_data_button = ctk.CTkButton(master=self.main_frame, text="Clear", font=(self.font, 20), command=self.data_empty, fg_color="#770011", hover_color="#440011")
-        self.ico_btn_label = ctk.CTkLabel(master=self.main_frame, text="App Icon:", font=(self.font, 20))
-        self.splash_btn_label = ctk.CTkLabel(master=self.main_frame, text="!Splash Image!:", font=(self.font, 20))
-        self.ico_button = ctk.CTkButton(master=self.main_frame, text="🖼️", font=(self.font, 20), command=self.choose_ico_file, fg_color=("#ffffff", "#333333"), hover_color=("#ebebeb", "#242424"), text_color=("#121212", "#ebebeb"))
-        self.splash_button = ctk.CTkButton(master=self.main_frame, text="🔳", font=(self.font, 20), command=self.choose_splash_file, fg_color=("#ffffff", "#333333"), hover_color=("#ebebeb", "#242424"), text_color=("#121212", "#ebebeb"))
-        self.ico_clear_button = ctk.CTkButton(master=self.main_frame, text="🗑️", font=(self.font, 20), command=self.clear_ico, fg_color="#770011", hover_color="#440011")
-        self.splash_clear_button = ctk.CTkButton(master=self.main_frame, text="🗑️", font=(self.font, 20), command=self.clear_splash, fg_color="#770011", hover_color="#440011")
-        self.data_text_box = ctk.CTkTextbox(master=self.main_frame, font=(self.font, 12), width=300, wrap = "word", state = "disabled")
-        self.modules_entry = ctk.CTkEntry(master=self.main_frame, placeholder_text="Additional Modules", font=(self.font, 16))
-        self.build_button = ctk.CTkButton(master=self, text="Build", width=200, font=(self.font, 20), command=lambda: Thread(target=self.build, daemon=True).start(), fg_color="#008800", hover_color="#005200")
-        self.show_command_button = ctk.CTkButton(master=self, text="?", font=(self.font, 18), width=25, command=lambda: AlertWindow.ToplevelWindow(titleText="Command", msg=" ".join(self.get_command()), width=600))
-        self.status_label = ctk.CTkLabel(master=self, text="Status: Idle", font=(self.font, 20))
-        # self.backend_dropdown = ctk.CTkOptionMenu(master=self, values=["PyInstaller", "Nuitka"], font=(self.font, 18), width=175, command= lambda x: self.backend_specific_ui_switch(bknd=True if x == "Nuitka" else False))
-        self.backend_radio_PyInstaller = ctk.CTkRadioButton(master=self, text="PyInstaller", variable=self.backend, value=False, command=lambda: self.backend_specific_ui_switch(bknd=False), font=(self.font, 18))
-        self.backend_radio_Nuitka = ctk.CTkRadioButton(master=self, text="Nuitka", variable=self.backend, value=True, command=lambda: self.backend_specific_ui_switch(bknd=True), font=(self.font, 18))
-        self.expand_button = ctk.CTkButton(master=self, text="↓", font=(self.font, 18), command=self.expand, width=25)
+        self.title_label = ctk.CTkLabel(master=self, text="PYNTEXEC", font=(self.font[0], self.font_size_percent(10)))
+        self.about_button = ctk.CTkButton(master=self, text="About", font=(self.font[0], self.font_size_percent(40)), command=lambda: AlertWindow.ToplevelWindow(titleText="About", version=self.version), width = 50, height=25)
+        self.file_entry = ctk.CTkEntry(master=self.main_frame, placeholder_text="Choose a python file", font=self.font)
+        self.file_button = ctk.CTkButton(master=self.main_frame, text="🔍", font=self.font, command=self.choose_file, width=25)
+        self.terminal_check = ctk.CTkCheckBox(master=self.main_frame, text="Console", width=70, font=self.font, variable=self.is_terminal_visible, onvalue=True, offvalue=False, checkbox_height= 20, checkbox_width= 20, border_width=2)
+        self.name_entry = ctk.CTkEntry(master=self.main_frame, placeholder_text="App Name", font=self.font)
+        self.pick_output_dir = ctk.CTkButton(master=self.main_frame, text="output dir", font=self.font, command=self.pick_output)
+        self.data_text_box_label = ctk.CTkLabel(master=self.main_frame, text="Data List:", font=self.font)
+        self.add_folder_button = ctk.CTkButton(master=self.main_frame, text="Folder", font=self.font, command=lambda: self.add_data(datatype="folder"))
+        self.add_files_button = ctk.CTkButton(master=self.main_frame, text="Files", font=self.font, command=lambda: self.add_data(datatype="files"))
+        self.clear_data_button = ctk.CTkButton(master=self.main_frame, text="Clear", font=self.font, command=self.data_empty, fg_color="#770011", hover_color="#440011")
+        self.ico_btn_label = ctk.CTkLabel(master=self.main_frame, text="App Icon:", font=self.font)
+        self.splash_btn_label = ctk.CTkLabel(master=self.main_frame, text="!Splash Image!:", font=self.font)
+        self.ico_button = ctk.CTkButton(master=self.main_frame, text="🖼️", font=self.font, command=self.choose_ico_file, fg_color=("#ffffff", "#333333"), hover_color=("#ebebeb", "#242424"), text_color=("#121212", "#ebebeb"))
+        self.splash_button = ctk.CTkButton(master=self.main_frame, text="🔳", font=self.font, command=self.choose_splash_file, fg_color=("#ffffff", "#333333"), hover_color=("#ebebeb", "#242424"), text_color=("#121212", "#ebebeb"))
+        self.ico_clear_button = ctk.CTkButton(master=self.main_frame, text="🗑️", font=self.font, command=self.clear_ico, fg_color="#770011", hover_color="#440011")
+        self.splash_clear_button = ctk.CTkButton(master=self.main_frame, text="🗑️", font=self.font, command=self.clear_splash, fg_color="#770011", hover_color="#440011")
+        self.data_text_box = ctk.CTkTextbox(master=self.main_frame, font=(self.font[0], self.font_size_percent(40)), width=300, wrap = "word", state = "disabled")
+        self.modules_entry = ctk.CTkEntry(master=self.main_frame, placeholder_text="Additional Modules", font=(self.font[0], self.font_size_percent(20)), width=300)
+        self.build_button = ctk.CTkButton(master=self, text="Build", width=150, font=self.font, command=lambda: Thread(target=self.build, daemon=True).start(), fg_color="#008800", hover_color="#005200")
+        self.show_command_button = ctk.CTkButton(master=self, text="?", font=(self.font[0], self.font_size_percent(10)), width=25, command=lambda: AlertWindow.ToplevelWindow(titleText="Command", msg=" ".join(self.get_command()), width=600))
+        self.status_label = ctk.CTkLabel(master=self, text="Status: Idle", font=self.font)
+        self.backend_radio_PyInstaller = ctk.CTkRadioButton(master=self, text="PyInstaller", variable=self.backend, value=False, command=lambda: self.backend_specific_ui_switch(bknd=False), font=(self.font[0], self.font_size_percent(10)), width=115)
+        self.backend_radio_Nuitka = ctk.CTkRadioButton(master=self, text="Nuitka", variable=self.backend, value=True, command=lambda: self.backend_specific_ui_switch(bknd=True), font=(self.font[0], self.font_size_percent(10)))
+        self.expand_button = ctk.CTkButton(master=self, text="↓", font=(self.font[0], self.font_size_percent(10)), command=self.expand, width=25)
         self.progress_bar = ctk.CTkProgressBar(master=self, mode="indeterminate", width=512, progress_color="#228822", height=8)
-        self.console = ctk.CTkTextbox(master=self, font=(self.font, 16), wrap="word", state="disabled")
+        self.console = ctk.CTkTextbox(master=self, font=(self.font[0], self.font_size_percent(20)), width=300, wrap="word", state="disabled")
         
         # Element gridding
         self.theme_button.grid(row=0, column=0, columnspan=1, pady=(3,0), padx=(10, 0), sticky="w")
@@ -529,7 +533,7 @@ class Application(ctk.CTk):
         self.about_button.grid(row=0, column=19, columnspan=2, pady=(3,0), padx=(5, 10), sticky ="e")
         self.file_entry.grid(row=0, column=0, columnspan=19, pady=(3,0), padx=(10, 0), sticky="nsew")
         self.file_button.grid(row=0, column=19, columnspan=1, pady=(3,0), padx=(5,10), sticky="ew")
-        self.open_dist_dir.grid(row=1, column=15, columnspan=5, pady=(3,0), padx=(5, 10), sticky="ew")
+        self.pick_output_dir.grid(row=1, column=15, columnspan=5, pady=(3,0), padx=(5, 10), sticky="ew")
         self.data_text_box_label.grid(row=2, column=0, columnspan=2, pady=(3,0), padx=(10, 0), sticky="w")
         self.add_folder_button.grid(row=2, column=2, columnspan=2, pady=(3,0), padx=(5, 0), sticky="ew")
         self.add_files_button.grid(row=2, column=4, columnspan=2, pady=(3,0), padx=(5, 0), sticky="ew")
@@ -545,12 +549,24 @@ class Application(ctk.CTk):
         self.build_button.grid(row=19, column=0, columnspan=2, pady=(3,0), padx=(10,0), sticky="we")
         self.status_label.grid(row=19, column=0, columnspan=20, pady=(3,0), padx=(0,0))
         self.show_command_button.grid(row=19, column=2, columnspan=1, pady=(3,0), padx=(5,0), sticky="w")
-        # self.backend_dropdown.grid(row=19, column=17, columnspan=3, pady=(3,0), padx=(5,10), sticky="w")
-        self.backend_radio_PyInstaller.grid(row=19, column=17, columnspan=2, pady=(3,0), padx=(5, 5), sticky="e")
-        self.backend_radio_Nuitka.grid(row=19, column=18, columnspan=2, pady=(3,0), padx=(5, 0), sticky="e")
+        self.backend_radio_PyInstaller.grid(row=19, column=16, columnspan=2, pady=(3,0), padx=(5, 0), sticky="e")
+        self.backend_radio_Nuitka.grid(row=19, column=18, columnspan=2, pady=(3,0), padx=(5, 10), sticky="e")
         self.expand_button.grid(row=20, column=0, columnspan=1, pady=(3,3), padx=(10, 0), sticky="w")
         self.progress_bar.grid(row=20, column=0, columnspan=20, pady=(3,3), padx=(50, 10), sticky="ew")
     
+        # Initialize PyInstaller specific UI elements
+        self.one_file_check = ctk.CTkCheckBox(master=self.main_frame, text="--onefile", width=100, font=self.font, variable=self.is_onefile, onvalue=True, offvalue=False, checkbox_height= 20, checkbox_width= 20, border_width=2)
+        self.excl_bootl_check = ctk.CTkCheckBox(master=self.main_frame, text="no _bootlocale", width=185, font=self.font, variable=self.exclude_bootlocale, onvalue=True, offvalue=False, checkbox_height= 20, checkbox_width= 20, border_width=2)        
+        self.remove_build_button = ctk.CTkButton(master=self.main_frame, text="rm Build dir", font=self.font, command=lambda: Thread(target=self.remove_build_conf, daemon=True).start(), fg_color="#770011", hover_color="#440011")    
+
+        # Initialize nuitka specific UI elements
+        
+        self.one_file_dropdown = ctk.CTkOptionMenu(master=self.main_frame, values=self.onefile_values, font=(self.font[0], self.font_size_percent(20)), width=100, dynamic_resizing=False, command=lambda x: self.nuitka_onefile.set("--"+x))
+        self.one_file_dropdown.set("standalone")
+        self.rm_build_check = ctk.CTkCheckBox(master=self.main_frame, text="no build 📂", width=125, font=self.font, variable=self.keep_build, onvalue=True, offvalue=False, checkbox_height= 20, checkbox_width= 20, border_width=2)
+        self.tkinter_check = ctk.CTkCheckBox(master=self.main_frame, text="tk-inter", width=70, font=self.font, variable=self.tkinter_flag, onvalue=True, offvalue=False, checkbox_height= 20, checkbox_width= 20, border_width=2)
+        self.isolated_check = ctk.CTkCheckBox(master=self.main_frame, text="isolated", width=70, font=self.font, variable=self.isolated_flag, onvalue=True, offvalue=False, checkbox_height= 20, checkbox_width= 20, border_width=2)
+
         self.backend_specific_ui_switch(self.backend.get())
 
 
