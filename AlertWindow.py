@@ -17,9 +17,6 @@ class ToplevelWindow(ctk.CTkToplevel):
             self.after(201, lambda: self.iconbitmap(path.join(path.dirname(__file__),"assets","pyntexec.ico")))
         else:
             self.iconphoto(False, PhotoImage(file= path.join(path.dirname(__file__),"assets","pyntexec.png")))
-            
-        self.spec_path = path.join(path.dirname(__file__),"build")
-        print(self.spec_path)
 
         self.resizable(False, False)
         self.frame = ctk.CTkFrame(self)
