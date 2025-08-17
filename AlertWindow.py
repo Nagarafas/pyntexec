@@ -7,7 +7,7 @@ from PIL import Image
 OPERATING_SYSTEM = system()
 
 class ToplevelWindow(ctk.CTkToplevel):
-    def __init__(self, msg: str = "", titleText: str = "Alert", version = "1.0.0", *args, **kwargs):
+    def __init__(self, msg: str = "", titleText: str = "Alert", version = "1.0.0", overide_wraplength = 200, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.message = msg
         self.title(titleText)
@@ -26,7 +26,7 @@ class ToplevelWindow(ctk.CTkToplevel):
         self.frame.pack_propagate(True)
         self.frame.pack(padx=10, pady=10)
         
-        self.label = ctk.CTkLabel(self.frame, text= self.message, font=("Arial", self.font_size_percent(20)), wraplength=200, justify="center")
+        self.label = ctk.CTkLabel(self.frame, text= self.message, font=("Arial", self.font_size_percent(20)), wraplength=overide_wraplength, justify="center")
         self.okButton = ctk.CTkButton(self.frame, text="OK", command=self.destroy, width=75, font=("Arial", self.font_size_percent(30)), fg_color="#008800", hover_color="#005200", height=20)
         
         if titleText == "About":
