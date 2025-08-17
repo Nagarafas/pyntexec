@@ -8,7 +8,6 @@ from tkinter import PhotoImage
 from PIL import Image
 import AlertWindow
 import confirmationWindow as confw
-from importlib.util import find_spec
 from os import getcwd
 OPERATING_SYSTEM= operating_system()
 
