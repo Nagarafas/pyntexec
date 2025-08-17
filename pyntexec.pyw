@@ -1,6 +1,6 @@
 from shutil import rmtree
 from threading import Thread
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_output
 from os import path
 from platform import system as operating_system
 import customtkinter as ctk
@@ -9,6 +9,8 @@ from PIL import Image
 import AlertWindow
 import confirmationWindow as confw
 from os import getcwd
+from sys import version_info, executable
+VERSION_INFO = version_info 
 OPERATING_SYSTEM= operating_system()
 
 import crossfiledialog
@@ -44,6 +46,7 @@ class Application(ctk.CTk):
         self.splash_file = None
         self.tkinter_flag = ctk.BooleanVar(value=False)
         self.isolated_flag = ctk.BooleanVar(value=False)
+         
         # list of all the nuitka onefile options
         self.onefile_values = ["standalone", "onefile", "onefile-no-compression", "onefile-as-archive", "onefile-no-dll"]
         if OPERATING_SYSTEM == "Linux": values = values[:-1]  # remove "onefile-no-dll" for Linux
@@ -51,6 +54,10 @@ class Application(ctk.CTk):
         self.working_dir_bin = path.dirname(__file__)
         self.working_dir = getcwd()
         self.output_dir = self.working_dir
+        # set the default python path to use the already installed python for when app is run as script
+        self.selected_python: str = executable
+        print(f"Selected Python exec: {executable}")
+        self.pythons_dict: dict = {}
         
         if OPERATING_SYSTEM == "Windows":
             self.wm_iconbitmap(path.join(path.dirname(__file__),"assets","pyntexec.ico"))
@@ -149,6 +156,71 @@ class Application(ctk.CTk):
             ctk.set_appearance_mode("Dark")
             self.is_dark = True
     
+    def find_supported_python(self):
+        if OPERATING_SYSTEM == "Windows":
+            try:
+                out = check_output(["py", "-0p"], text=True)
+            except Exception:
+                AlertWindow.ToplevelWindow("No Python installation found\nplease install python 3.12 or older\n\nyou can download python here:\nhttps://www.python.org/downloads/", overide_wraplength=250)
+                return
+    
+            for line in out.splitlines():
+                if not line.strip():
+                    continue
+                parts = line.split()
+                tag = parts[0].removeprefix("-V:")
+                python_path = parts[-1]
+                if not "*" in tag:
+                    self.pythons_dict[tag] = python_path
+                else:
+                    self.pythons_dict["venv"] = python_path
+            
+            self.python_picker_entry.configure(values=self.pythons_dict)
+            self.python_picker_entry.set(f"{next(iter(self.pythons_dict))}")
+            
+            if len(self.pythons_dict) == 1 and "3.13" in self.pythons_dict:
+                AlertWindow.ToplevelWindow("limited functionality\nNuitka does not support python 3.13\nplease install python 3.12.X or older")
+                
+            elif VERSION_INFO.major <= 3 and VERSION_INFO.minor <=12 and path.isfile(path.join(self.working_dir,"pyntexec.pyw")):
+                return
+            elif "3.12" in self.pythons_dict:
+                self.python_picker_entry.set("3.12")
+                self.selected_python = self.pythons_dict[self.python_picker_entry.get()]
+                print(self.selected_python)
+            else:
+                self.python_picker_entry.set(iter(self.pythons_dict))
+                self.selected_python = self.python_picker_entry.get()
+                print(f"Changed selected python to: {self.selected_python}")
+        else:
+            print("feature not implemented yet")
+                
+    def check_installed_modules(self) -> bool:
+        out = check_output([self.selected_python,"-m", "pip",  "list"], text = True)
+        modules: list = []
+        for line in out.splitlines():
+            if not line.strip():
+                continue
+            if line.split()[0] != "Package" and line.split()[0] != "-------------------------" :
+                modules.append(line.split()[0])
+        
+        print("\n".join(modules))  
+        if not ("pyinstaller" in modules) and not(self.backend.get()):
+            confw.ToplevelWindow("PyInstaller not installed\nwould you like to install it now?", command=lambda: Thread(target = self.run_process, args=(f"{self.selected_python} -m pip install pyinstaller", "install_backend"), daemon = True).start())
+            return False
+        elif not ("Nuitka" in modules) and self.backend.get():
+            confw.ToplevelWindow("Nuitka not installed\nwould you like to install it now?",  command=lambda: Thread(target = self.run_process, args=(f"{self.selected_python} -m pip install nuitka", "install_backend"), daemon = True).start())
+            return False
+        return True
+    
+    def set_current_python(self, value = None):
+        if not value:
+            value = self.python_picker_entry.get()
+        if value in self.pythons_dict:
+            self.selected_python = self.pythons_dict[value]
+        elif path.isfile(value):
+            self.selected_python = value
+        print(self.selected_python)
+      
     def get_command(self) -> list:
         working_dir =  self.output_dir if len(self.output_dir) > 0 else self.working_dir
         if not self.backend.get():
@@ -198,12 +270,12 @@ class Application(ctk.CTk):
                 for module in modules:
                     options.append(f'--hidden-import="{module.strip()}"')
             
-            if len(self.output_dir.get()) > 0:
+            if len(self.output_dir) > 0:
                 options.append(f'--distpath="{working_dir}/dist"')
             
             options.append("--clean")
             
-            return [f'python -m PyInstaller "{self.file_entry.get()}"', f'--specpath="{self.spec_path}"'] + options
+            return [f'{self.selected_python} -m PyInstaller "{self.file_entry.get()}"', f'--specpath="{self.spec_path}"'] + options
             
         else:
             options = [self.nuitka_onefile.get() if not "onefile-" in self.nuitka_onefile.get() else "--onefile "+self.nuitka_onefile.get(), "--deployment"]
@@ -265,7 +337,7 @@ class Application(ctk.CTk):
             if self.isolated_flag.get():
                 options.append("--python-flag=isolated")
                                         
-            return [f'python -m nuitka --main="{self.file_entry.get()}"'] + options
+            return [f'{self.selected_python} -m nuitka --main="{self.file_entry.get()}"'] + options
             
     def add_data(self, datatype : str) -> None:
         if datatype == "folder":
@@ -277,7 +349,7 @@ class Application(ctk.CTk):
             if temp_data and (temp_data not in self.data):
                 self.data.append(temp_data)
 
-            self.update_text_box(text="".join(self.data))
+            self.update_text_box(text="\n".join(self.data))
  
         elif datatype == "files":
             try:
@@ -319,7 +391,7 @@ class Application(ctk.CTk):
             self.build_button.configure(state="normal")
             self.progress_bar.stop()
             self.progress_bar.set(1)
-            AlertWindow.ToplevelWindow("backend module successfully installed")
+            self.after(2000, self.after_build)
 
         else:
             self.status_label.configure(text="Status: Finished")
@@ -327,10 +399,14 @@ class Application(ctk.CTk):
             self.progress_bar.stop()
             self.progress_bar.set(1)
             self.after(2000, self.after_build)
-            AlertWindow.ToplevelWindow("Build completed successfully")
+            Popen(f'explorer "{self.output_dir}\\dist"' if OPERATING_SYSTEM == "Windows" else f'xdg-open "{self.output_dir}/dist"', shell=True)
+        AlertWindow.ToplevelWindow("Operation Finished")
                 
     def build(self) -> None:
+        if not self.check_installed_modules():
+            return
         self.clear_console()
+        self.set_current_python()
         
         if self.file_entry.get():
             the_command = " ".join(self.get_command())
@@ -342,18 +418,17 @@ class Application(ctk.CTk):
             self.build_button.configure(state="normal")
             self.progress_bar.set(1)
             self.progress_bar.stop()
-    
+       
+    def after_build(self) -> None:
+        self.progress_bar.set(1)
+        self.status_label.configure(text="Status: Idle")
+        self.update()
+        
     def read_output(self, stream) -> None:
         for line in iter(stream.readline, ''):
             if line:
                 self.after(0, self.update_console, line)
         stream.close()
-       
-    def after_build(self) -> None:
-        self.progress_bar.set(1)
-        self.status_label.configure(text="Status: Idle")
-        Popen(f'explorer "{self.output_dir}\\dist"' if OPERATING_SYSTEM == "Windows" else f'xdg-open "{self.output_dir}/dist"', shell=True)
-        self.update()
                 
     def update_text_box(self, text: str) -> None:
         self.data_text_box.configure(state="normal")
@@ -515,10 +590,11 @@ class Application(ctk.CTk):
         self.splash_button = ctk.CTkButton(master=self.main_frame, text="🔳", font=self.font, command=self.choose_splash_file, fg_color=("#ffffff", "#333333"), hover_color=("#ebebeb", "#242424"), text_color=("#121212", "#ebebeb"))
         self.ico_clear_button = ctk.CTkButton(master=self.main_frame, text="🗑️", font=self.font, command=self.clear_ico, fg_color="#770011", hover_color="#440011")
         self.splash_clear_button = ctk.CTkButton(master=self.main_frame, text="🗑️", font=self.font, command=self.clear_splash, fg_color="#770011", hover_color="#440011")
-        self.data_text_box = ctk.CTkTextbox(master=self.main_frame, font=(self.font[0], self.font_size_percent(40)), width=300, wrap = "word", state = "disabled")
+        self.data_text_box = ctk.CTkTextbox(master=self.main_frame, font=(self.font[0], self.font_size_percent(20)), width=300, wrap = "word", state = "disabled")
         self.modules_entry = ctk.CTkEntry(master=self.main_frame, placeholder_text="Additional Modules", font=(self.font[0], self.font_size_percent(20)), width=300)
+        self.python_picker_entry = ctk.CTkComboBox(master=self.main_frame,font=(self.font[0], self.font_size_percent(20)), command=lambda x:self.set_current_python(x))
         self.build_button = ctk.CTkButton(master=self, text="Build", width=150, font=self.font, command=lambda: Thread(target=self.build, daemon=True).start(), fg_color="#008800", hover_color="#005200")
-        self.show_command_button = ctk.CTkButton(master=self, text="?", font=(self.font[0], self.font_size_percent(10)), width=25, command=lambda: AlertWindow.ToplevelWindow(titleText="Command", msg=" ".join(self.get_command()), width=600))
+        self.show_command_button = ctk.CTkButton(master=self, text="?", font=(self.font[0], self.font_size_percent(10)), width=25, command=lambda: AlertWindow.ToplevelWindow(titleText="Command", msg=" ".join(self.get_command()), overide_wraplength=500))
         self.status_label = ctk.CTkLabel(master=self, text="Status: Idle", font=self.font)
         self.backend_radio_PyInstaller = ctk.CTkRadioButton(master=self, text="PyInstaller", variable=self.backend, value=False, command=lambda: self.backend_specific_ui_switch(bknd=False), font=(self.font[0], self.font_size_percent(10)), width=115)
         self.backend_radio_Nuitka = ctk.CTkRadioButton(master=self, text="Nuitka", variable=self.backend, value=True, command=lambda: self.backend_specific_ui_switch(bknd=True), font=(self.font[0], self.font_size_percent(10)))
@@ -544,7 +620,8 @@ class Application(ctk.CTk):
         self.ico_clear_button.grid(row=18, column=10, rowspan=1, columnspan=5, pady=(3,3), padx=(5,0), sticky="ew")
         self.splash_clear_button.grid(row=18, column=15, rowspan=1, columnspan=5, pady=(3,3), padx=(5,10), sticky="ew")
         self.data_text_box.grid(row=3, column=0, rowspan=15, columnspan=10, pady=(3,0), padx=(10, 0), sticky="nsew")
-        self.modules_entry.grid(row=18, column=0, columnspan=10, pady=(3,3), padx=(10, 0), sticky="ew")
+        self.modules_entry.grid(row=18, column=0, columnspan=7, pady=(3,3), padx=(10, 0), sticky="ew")
+        self.python_picker_entry.grid(row=18, column=7, columnspan=3, pady=(3,3), padx=(5, 0), sticky="ew")
         self.build_button.grid(row=19, column=0, columnspan=2, pady=(3,0), padx=(10,0), sticky="we")
         self.status_label.grid(row=19, column=0, columnspan=20, pady=(3,0), padx=(0,0))
         self.show_command_button.grid(row=19, column=2, columnspan=1, pady=(3,0), padx=(5,0), sticky="w")
@@ -567,8 +644,14 @@ class Application(ctk.CTk):
         self.isolated_check = ctk.CTkCheckBox(master=self.main_frame, text="isolated", width=70, font=self.font, variable=self.isolated_flag, onvalue=True, offvalue=False, checkbox_height= 20, checkbox_width= 20, border_width=2)
 
         self.backend_specific_ui_switch(self.backend.get())
+        
+        self.find_supported_python()
 
 
 if __name__ == "__main__":
-    app = Application()
-    app.mainloop()
+    human_friendly = f"{VERSION_INFO.major}.{VERSION_INFO.minor}.{version_info.micro}"
+    if VERSION_INFO.major <= 3 and VERSION_INFO.minor <=12:
+        app = Application()
+        app.mainloop()
+    else:
+        print(f"Unsupported Python version:{human_friendly}, please run the script using python 3.12 or older")
