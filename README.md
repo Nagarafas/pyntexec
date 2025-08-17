@@ -17,10 +17,11 @@
 - View build progress and status
 - Open the output directory after build
 - Cross-platform support (Windows, Linux)
+- ability to pick any of the python installations on your system if you have multiple
 
 ## Requirements
 
-- Python 3.12.10
+- Python 3.12.X
 - [CustomTkinter](https://customtkinter.tomschimansky.com/), installed with (`pip install customtkinter`)
 - [PyInstaller](https://pyinstaller.org/) installed on your system (`pip install pyinstaller`)
 - [nuitka](https://nuitka.net) installed on your system (`pip install nuitka`)
@@ -28,7 +29,7 @@
 - [crossfiledialog](https://github.com/maikelwever/crossfiledialog) installed on your system (`pip install crossfiledialog`)
 - [pywin32](https://github.com/mhammond/pywin32) !WINDOWS! installed on your system (`pip install pywin32`)
 - [GCC Compiler](https://gcc.gnu.org/install/) auto-installs on build with nuitka
-> As of 18-08-2025 nuitka can use gcc only for python 3.12 and older
+> As of 18-08-2025 nuitka can use gcc only for python 3.12 and older versions (on windows)
 
 > **Note:**  
 > This app uses system/env installed modules to bundle/compile python scripts
@@ -59,9 +60,10 @@ python pyntexec.pyw
 
 1. Select the Python script you want to compile.
 2. Choose build options (onefile / onedir, icon, data, etc.).
-3. Pick a backend (PyInstaller / nuitka)
+3. Pick a backend (PyInstaller / nuitka).
+4. Choose a python installation/venv.
 4. Click **Build**.
-5. After the build completes, the output folder will open automatically, if not there is a button for it.
+5. After the build completes, the output folder will open automatically.
 
 ## Unloading Splash Images
 
@@ -91,7 +93,7 @@ if "NUITKA_ONEFILE_PARENT" in os.environ:
 
 ## Limitations
 
-- Pyntexec requires CustomTkinter, PyInstaller & nuitka to be installed on the system.
+- Pyntexec requires PyInstaller & nuitka to be installed on the system.
 - Building executables from within a frozen Pyntexec app is not supported and thus no binaries will be shipped.
 - many advanced PyInstaller/nuitka options are not be exposed in the GUI, I might add a textbox later for extra options.
 
