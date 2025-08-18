@@ -173,26 +173,27 @@ class Application(ctk.CTk):
                 tag = parts[0].removeprefix("-V:")
                 python_path = parts[-1]
                 if not "*" in tag:
-                    self.pythons_dict[tag] = python_path
+                    self.pythons_dict["python"+tag] = python_path
                 else:
-                    self.pythons_dict["venv"] = python_path
+                    self.pythons_dict[".venv"] = python_path
             
             self.python_picker_entry.configure(values=self.pythons_dict)
             self.python_picker_entry.set(f"{next(iter(self.pythons_dict))}")
             
-            if len(self.pythons_dict) == 1 and "3.13" in self.pythons_dict:
+            if len(self.pythons_dict) == 1 and "python3.13" in self.pythons_dict:
                 AlertWindow.ToplevelWindow("limited functionality\nNuitka does not support python 3.13\nplease install python 3.12.X or older")
                 
             elif VERSION_INFO.major <= 3 and VERSION_INFO.minor <=12 and path.isfile(path.join(self.working_dir,"pyntexec.pyw")):
                 return
-            elif "3.12" in self.pythons_dict:
-                self.python_picker_entry.set("3.12")
+            elif "python3.12" in self.pythons_dict:
+                self.python_picker_entry.set("python3.12")
                 self.selected_python = self.pythons_dict[self.python_picker_entry.get()]
                 print(self.selected_python)
             else:
                 self.python_picker_entry.set(iter(self.pythons_dict))
                 self.selected_python = self.python_picker_entry.get()
                 print(f"Changed selected python to: {self.selected_python}")
+                
         else:
             #linux implementation
             out = check_output("ls -a .*/bin/python && ls -a /usr/bin/python?.**[0-9] /usr/local/bin/python?.**[0-9]", text=True, shell=True)
@@ -232,7 +233,7 @@ class Application(ctk.CTk):
             if not "Package" in line.split()[0] and not "-------------------------" in line.split()[0]:
                 modules.append(line.split()[0])
         
-        print("\n".join(modules))  
+        # print("\n".join(modules))
         if not ("pyinstaller" in modules) and not(self.backend.get()):
             confw.ToplevelWindow("PyInstaller not installed\nwould you like to install it now?", command=lambda: Thread(target = self.run_process, args=(f"{self.selected_python} -m pip install pyinstaller", "install_backend"), daemon = True).start())
             return False
