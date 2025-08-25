@@ -1,30 +1,38 @@
 # Pyntexec
 
-**Pyntexec** is a graphical user interface (GUI) tool built with [CustomTkinter](https://customtkinter.tomschimansky.com/) that helps you easily package Python scripts into standalone executables using [PyInstaller](https://pyinstaller.org/). It is designed to simplify the process of building distributable applications from your Python code, providing options for one-file or one-folder builds, icon selection, and more.
+**Pyntexec** is a graphical user interface (GUI) tool built with [CustomTkinter](https://customtkinter.tomschimansky.com/) that helps you easily package Python scripts into standalone executables using [PyInstaller](https://pyinstaller.org/) or [nuitka](https://nuitka.net). It is designed to simplify the process of building distributable applications from your Python code, providing options for one-file or one-folder builds, icon selection, and more.
 
-![Screenshot-of-app](assets/Pyntexec.png)
+![Screenshot-of-app](assets/Pyntexec_Preview.png)
 
 ## Features
 
 - Simple and intuitive CustomTkinter-based GUI
 - Select Python scripts to compile
 - Choose between one-file or one-folder output
-- Add custom icons to your executables (windows support only)
-- Add a splash image (you must unload the image manually from within your script using [pyi](https://pypi.org/project/pyi/))
+- Add custom icons to your executables (windows support only, nuitka allows for icon on linux however i have not seen it work)
+- Add a splash image (you must unload the image manually from within your script, check **Unloading Splash Images**)
 - Include additional data files or folders
+- Inlcude extra modules that your script uses but are not imported directly
 - Toggle console/terminal window visibility (needed if your script has no GUI and runs in the terminal)
 - View build progress and status
 - Open the output directory after build
 - Cross-platform support (Windows, Linux)
+- ability to pick any of the python installations on your system if you have multiple
 
 ## Requirements
 
-- Python 3.7+ (should be fine even though i've only tested it with 3.13.5)
-- [PyInstaller](https://pyinstaller.org/) installed on your system (`pip install pyinstaller`)
+- Python 3.12.X
 - [CustomTkinter](https://customtkinter.tomschimansky.com/), installed with (`pip install customtkinter`)
+- [PyInstaller](https://pyinstaller.org/) installed on your system (`pip install pyinstaller`)
+- [nuitka](https://nuitka.net) installed on your system (`pip install nuitka`)
+- [pillow](https://pillow.readthedocs.io/en/stable/) installed on your system (`pip install pillow`)
+- [crossfiledialog](https://github.com/maikelwever/crossfiledialog) installed on your system (`pip install crossfiledialog`)
+- [pywin32](https://github.com/mhammond/pywin32) !WINDOWS! installed on your system (`pip install pywin32`)
+- [GCC Compiler](https://gcc.gnu.org/install/) auto-installs on build with nuitka
+> As of 18-08-2025 nuitka can use gcc only for python 3.12 and older versions (on windows)
 
 > **Note:**  
-> Due to the way Pyinstaller is used, this app cannot be compiled, as a result there are no binaries.
+> This app uses system/env installed modules to bundle/compile python scripts
 > Due to PyInstaller limitations, Pyntexec cannot bundle PyInstaller itself.
 
 ## Installation
@@ -37,10 +45,9 @@ cd pyntexec
 ```
 
 Install dependencies (if needed):
-
+>pyinstaller and nuitka are installed through the gui if they were not already installed when build is pressed
 ```sh
-pip install pyinstaller customtkinter
-
+pip install customtkinter pyinstaller nuitka pillow crossfiledialog pywin32
 ```
 
 ## Usage
@@ -52,15 +59,18 @@ python pyntexec.pyw
 ```
 
 1. Select the Python script you want to compile.
-2. Choose build options (onefile/onedir, icon, data, etc.).
-3. Click **Build**.
-4. After the build completes, the output folder will open automatically, if not there is a button for it.
+2. Choose build options (onefile / onedir, icon, data, etc.).
+3. Pick a backend (PyInstaller / nuitka).
+4. Choose a python installation/venv.
+4. Click **Build**.
+5. After the build completes, the output folder will open automatically.
 
 ## Unloading Splash Images
 
 add this block in your script:
->ensure that Pyi is installed (pip install pyi)
 
+### Pyinstaller
+>ensure that Pyi is installed (pip install pyi)
 ```python
 try:
     import pyi_splash
@@ -69,12 +79,23 @@ try:
 except:
     print("PyInstaller splash screen not available, continuing without it.")
 ``` 
+### nuitka (windows only)
+```python
+if "NUITKA_ONEFILE_PARENT" in os.environ:
+   splash_filename = os.path.join(
+      tempfile.gettempdir(),
+      "onefile_%d_splash_feedback.tmp" % int(os.environ["NUITKA_ONEFILE_PARENT"]),
+   )
+
+   if os.path.exists(splash_filename):
+      os.unlink(splash_filename)
+```
 
 ## Limitations
 
-- Pyntexec requires PyInstaller & CustomTkinter to be installed on the system.
-- Building executables from within a frozen Pyntexec app is not supported and thus no compiled binaries will be shipped.
-- Some advanced PyInstaller options may not be exposed in the GUI, I might add a textbox later for extra options.
+- Pyntexec requires PyInstaller & nuitka to be installed on the system.
+- Building executables from within a frozen Pyntexec app is not supported and thus no binaries will be shipped.
+- many advanced PyInstaller/nuitka options are not be exposed in the GUI, I might add a textbox later for extra options.
 
 ## License
 
@@ -82,5 +103,9 @@ MIT License
 
 ## Credits
 
-- [PyInstaller](https://pyinstaller.org/)
 - [CustomTkinter](https://customtkinter.tomschimansky.com/)
+- [PyInstaller](https://pyinstaller.org/)
+- [nuitka](https://nuitka.net)
+- [pillow](https://pillow.readthedocs.io/en/stable/)
+- [crossfiledialog](https://github.com/maikelwever/crossfiledialog)
+    - [pywin32](https://github.com/mhammond/pywin32)
