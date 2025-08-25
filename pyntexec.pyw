@@ -21,7 +21,7 @@ from tkinter import filedialog # fallback for crossfiledialog
 class Application(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.version = "2.0.0-alpha"
+        self.version = "2.0.0"
         
         self.grid_x = 20
         self.grid_y = 25
@@ -240,6 +240,18 @@ class Application(ctk.CTk):
         elif not ("Nuitka" in modules) and self.backend.get():
             confw.ToplevelWindow("Nuitka not installed\nwould you like to install it now?",  command=lambda: Thread(target = self.run_process, args=(f"{self.selected_python} -m pip install nuitka", "install_backend"), daemon = True).start())
             return False
+        
+        selected_modules:list = self.modules_entry.get().lower().split(" ")
+        to_install:list = list() 
+        for module in selected_modules:
+            if not (module in modules):
+                to_install.append(module)
+                
+        to_install = " ".join(to_install)
+        if len(to_install):
+            confw.ToplevelWindow(f"Sellected modules: ({to_install})\nare not installed or don't exist,\ndo you want to try and install them?", command= lambda: Thread(target = self.run_process, args=(f"{self.selected_python} -m pip install {to_install}", "install_backend"), daemon = True).start())
+            return False
+        
         return True
     
     def set_current_python(self, value = None):
