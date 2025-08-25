@@ -231,13 +231,13 @@ class Application(ctk.CTk):
             if not line.strip():
                 continue
             if not "Package" in line.split()[0] and not "-------------------------" in line.split()[0]:
-                modules.append(line.split()[0])
+                modules.append(line.split()[0].lower())
         
         # print("\n".join(modules))
         if not ("pyinstaller" in modules) and not(self.backend.get()):
             confw.ToplevelWindow("PyInstaller not installed\nwould you like to install it now?", command=lambda: Thread(target = self.run_process, args=(f"{self.selected_python} -m pip install pyinstaller", "install_backend"), daemon = True).start())
             return False
-        elif not ("Nuitka" in modules) and self.backend.get():
+        elif not ("nuitka" in modules) and self.backend.get():
             confw.ToplevelWindow("Nuitka not installed\nwould you like to install it now?",  command=lambda: Thread(target = self.run_process, args=(f"{self.selected_python} -m pip install nuitka", "install_backend"), daemon = True).start())
             return False
         
