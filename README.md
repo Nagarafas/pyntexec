@@ -30,13 +30,22 @@
 - [pywin32](https://github.com/mhammond/pywin32) !WINDOWS! installed on your system (`pip install pywin32`)
 - [GCC Compiler](https://gcc.gnu.org/install/) auto-installs on build with nuitka
 > As of 18-08-2025 nuitka can use gcc only for python 3.12 and older versions (on windows)
+> If Visual Studio is installed nuitka can use the C compiller that VS provides eg cl.exe that can work for python3.13+
 
 > **Note:**  
 > This app uses system/env installed modules to bundle/compile python scripts
 > Due to PyInstaller limitations, Pyntexec cannot bundle PyInstaller itself.
 
 ## Installation
+### Windows
+- Go to [Releases](https://github.com/Nagarafas/pyntexec/releases) and download either the Portable or the setup
+- Run the downloaded .exe
 
+### Linux
+- Go to [Releases](https://github.com/Nagarafas/pyntexec/releases) and download the "Linux-amd64.tar.gz"
+- unpack and run the install.sh file in your terminal
+
+### run from source
 Clone this repository or download the source code:
 
 ```sh
@@ -54,6 +63,13 @@ pip install customtkinter pyinstaller nuitka pillow crossfiledialog pywin32
 
 Run the app:
 
+### Windows
+Launch from the start menu or the desktop shortcut
+
+### Linux
+Launch from the application launcher or from the desktop shortcut
+
+### from source
 ```sh
 python pyntexec.pyw
 ```
@@ -94,7 +110,6 @@ if "NUITKA_ONEFILE_PARENT" in os.environ:
 ## Limitations
 
 - Pyntexec requires PyInstaller & nuitka to be installed on the system.
-- Building executables from within a frozen Pyntexec app is not supported and thus no binaries will be shipped.
 - many advanced PyInstaller/nuitka options are not be exposed in the GUI, I might add a textbox later for extra options.
 
 ## License
