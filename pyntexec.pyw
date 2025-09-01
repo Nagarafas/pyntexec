@@ -21,7 +21,7 @@ from tkinter import filedialog # fallback for crossfiledialog
 class Application(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.version = "2.0.0"
+        self.version = "2.0.1"
         
         self.grid_x = 20
         self.grid_y = 25
@@ -195,18 +195,24 @@ class Application(ctk.CTk):
                 print(f"Changed selected python to: {self.selected_python}")
                 
         else:
-            #linux implementation
-            out = check_output("ls -a .*/bin/python && ls -a /usr/bin/python?.**[0-9] /usr/local/bin/python?.**[0-9]", text=True, shell=True)
-            try:
-                pass
-            except Exception:
-                AlertWindow.ToplevelWindow("No Python installation found\nplease install python 3.12 or older\n\nyou can download python here:\nhttps://www.python.org/downloads/", overide_wraplength=250)
-                return
+            # linux implementation
+            python_paths:list = [".*/bin/python", "/usr/bin/python?.*[0-9]", "/usr/local/bin/python?.*[0-9]"]
+            out:str = "" # initialize a out variable
+            for bin_path in python_paths:
+                try: # try every path that could lead to a python binary and add the path at the end of the 'out' variable
+                    out += check_output(f"ls -a {path.abspath(bin_path)}", text=True, shell=True) + "\n"    
+                except:
+                    print(f"no python in location: {path.abspath(bin_path)}")
     
             for line in out.splitlines():
                 if not line.strip():
                     continue
-                tag = line.split("/")[-1] if not "env" in line else line.split("/")[0]
+                if self.working_dir in line: # check if the binary is inside the apps directory, if so, it is a virtual env and will be tagged accordingly
+                    tag = f"venv({line})"
+                    env_tag = tag+""
+                else:
+                    tag = line.split("/")[-1]
+                    
                 python_path = line
                 
                 self.pythons_dict[tag] = python_path
@@ -214,9 +220,9 @@ class Application(ctk.CTk):
             self.python_picker_entry.configure(values=self.pythons_dict)
             
             # prefer env
-            if ".venv" in self.pythons_dict or ".env" in self.pythons_dict():
-                self.python_picker_entry.set(".venv")
-            else:
+            try:
+                self.python_picker_entry.set(env_tag)
+            except:
                 self.python_picker_entry.set(f"{next(iter(self.pythons_dict))}")
                 
             self.selected_python = self.pythons_dict[self.python_picker_entry.get()]
