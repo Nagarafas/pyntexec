@@ -21,7 +21,7 @@ from tkinter import filedialog # fallback for crossfiledialog
 class Application(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.version = "2.0.1"
+        self.version = "2.0.2"
         
         self.grid_x = 20
         self.grid_y = 25
@@ -148,11 +148,11 @@ class Application(ctk.CTk):
             
     def change_theme(self) -> None:
         if self.is_dark:
-            self.theme_button.configure(text="🌙", font=(self.font[0], 12))
+            self.theme_button.configure(text="Dark", font=(self.font[0], 12))
             ctk.set_appearance_mode("light")
             self.is_dark = False
         else:
-            self.theme_button.configure(text="🔆", font=(self.font[0], 12))
+            self.theme_button.configure(text="Light", font=(self.font[0], 12))
             ctk.set_appearance_mode("Dark")
             self.is_dark = True
     
@@ -617,14 +617,14 @@ class Application(ctk.CTk):
     # Static UI elements initialization
         self.theme_button = ctk.CTkButton(master=self, width=6, font=(self.font[0], self.font_size_percent(40)), command=self.change_theme)
         if self.is_dark:
-            self.theme_button.configure(text="🔆")
+            self.theme_button.configure(text="Light")
         else:
-            self.theme_button.configure(text="🌙")
+            self.theme_button.configure(text="Dark")
         
         self.title_label = ctk.CTkLabel(master=self, text="PYNTEXEC", font=(self.font[0], self.font_size_percent(10)))
         self.about_button = ctk.CTkButton(master=self, text="About", font=(self.font[0], self.font_size_percent(40)), command=lambda: AlertWindow.ToplevelWindow(titleText="About", version=self.version), width = 50, height=25)
         self.file_entry = ctk.CTkEntry(master=self.main_frame, placeholder_text="Choose a python file", font=self.font)
-        self.file_button = ctk.CTkButton(master=self.main_frame, text="🔍", font=self.font, command=self.choose_file, width=25)
+        self.file_button = ctk.CTkButton(master=self.main_frame, text="↵", font=self.font, command=self.choose_file, width=25)
         self.terminal_check = ctk.CTkCheckBox(master=self.main_frame, text="Console", width=70, font=self.font, variable=self.is_terminal_visible, onvalue=True, offvalue=False, checkbox_height= 20, checkbox_width= 20, border_width=2)
         self.name_entry = ctk.CTkEntry(master=self.main_frame, placeholder_text="App Name", font=self.font)
         self.pick_output_dir = ctk.CTkButton(master=self.main_frame, text="output dir", font=self.font, command=self.pick_output)
@@ -634,10 +634,10 @@ class Application(ctk.CTk):
         self.clear_data_button = ctk.CTkButton(master=self.main_frame, text="Clear", font=self.font, command=self.data_empty, fg_color="#770011", hover_color="#440011")
         self.ico_btn_label = ctk.CTkLabel(master=self.main_frame, text="App Icon:", font=self.font)
         self.splash_btn_label = ctk.CTkLabel(master=self.main_frame, text="!Splash Image!:", font=self.font)
-        self.ico_button = ctk.CTkButton(master=self.main_frame, text="🖼️", font=self.font, command=self.choose_ico_file, fg_color=("#ffffff", "#333333"), hover_color=("#ebebeb", "#242424"), text_color=("#121212", "#ebebeb"))
-        self.splash_button = ctk.CTkButton(master=self.main_frame, text="🔳", font=self.font, command=self.choose_splash_file, fg_color=("#ffffff", "#333333"), hover_color=("#ebebeb", "#242424"), text_color=("#121212", "#ebebeb"))
-        self.ico_clear_button = ctk.CTkButton(master=self.main_frame, text="🗑️", font=self.font, command=self.clear_ico, fg_color="#770011", hover_color="#440011")
-        self.splash_clear_button = ctk.CTkButton(master=self.main_frame, text="🗑️", font=self.font, command=self.clear_splash, fg_color="#770011", hover_color="#440011")
+        self.ico_button = ctk.CTkButton(master=self.main_frame, text="Icon", font=self.font, command=self.choose_ico_file, fg_color=("#ffffff", "#333333"), hover_color=("#ebebeb", "#242424"), text_color=("#121212", "#ebebeb"))
+        self.splash_button = ctk.CTkButton(master=self.main_frame, text="Splash", font=self.font, command=self.choose_splash_file, fg_color=("#ffffff", "#333333"), hover_color=("#ebebeb", "#242424"), text_color=("#121212", "#ebebeb"))
+        self.ico_clear_button = ctk.CTkButton(master=self.main_frame, text="Clear", font=self.font, command=self.clear_ico, fg_color="#770011", hover_color="#440011")
+        self.splash_clear_button = ctk.CTkButton(master=self.main_frame, text="Clear", font=self.font, command=self.clear_splash, fg_color="#770011", hover_color="#440011")
         self.data_text_box = ctk.CTkTextbox(master=self.main_frame, font=(self.font[0], self.font_size_percent(20)), width=300, wrap = "word", state = "disabled")
         self.modules_entry = ctk.CTkEntry(master=self.main_frame, placeholder_text="Additional Modules", font=(self.font[0], self.font_size_percent(20)), width=300)
         self.python_picker_entry = ctk.CTkComboBox(master=self.main_frame,font=(self.font[0], self.font_size_percent(20)), command=lambda x:self.set_current_python(x))
@@ -687,7 +687,7 @@ class Application(ctk.CTk):
         
         self.one_file_dropdown = ctk.CTkOptionMenu(master=self.main_frame, values=self.onefile_values, font=(self.font[0], self.font_size_percent(20)), width=100, dynamic_resizing=False, command=lambda x: self.nuitka_onefile.set("--"+x))
         self.one_file_dropdown.set("standalone")
-        self.rm_build_check = ctk.CTkCheckBox(master=self.main_frame, text="no build 📂", width=125, font=self.font, variable=self.keep_build, onvalue=True, offvalue=False, checkbox_height= 20, checkbox_width= 20, border_width=2)
+        self.rm_build_check = ctk.CTkCheckBox(master=self.main_frame, text="no build dir", width=125, font=self.font, variable=self.keep_build, onvalue=True, offvalue=False, checkbox_height= 20, checkbox_width= 20, border_width=2)
         self.tkinter_check = ctk.CTkCheckBox(master=self.main_frame, text="tk-inter", width=70, font=self.font, variable=self.tkinter_flag, onvalue=True, offvalue=False, checkbox_height= 20, checkbox_width= 20, border_width=2)
         self.isolated_check = ctk.CTkCheckBox(master=self.main_frame, text="isolated", width=70, font=self.font, variable=self.isolated_flag, onvalue=True, offvalue=False, checkbox_height= 20, checkbox_width= 20, border_width=2)
 
