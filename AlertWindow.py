@@ -1,48 +1,33 @@
-import customtkinter as ctk
 from platform import system
-from tkinter import PhotoImage
 from os import path
-from PIL import Image
+
+from PyQt6 import QtWidgets, uic
+from PyQt6.QtGui import QPixmap, QIcon
 
 OPERATING_SYSTEM = system()
 
-class ToplevelWindow(ctk.CTkToplevel):
-    def __init__(self, msg: str = "", titleText: str = "Alert", version = "1.0.0", overide_wraplength = 200, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class AlertWindow(QtWidgets.QDialog):
+    def __init__(self, msg: str = "", titleText: str = "Alert", version = "1.0.0", overide_wraplength = 200, parent=None):
+        super().__init__(parent)
+        uic.loadUi(path.join(path.dirname(__file__),"AlertWindow.ui"), self)
+        
+        self.setWindowTitle(titleText)
         self.message = msg
-        self.title(titleText)
-        self.font_size = 18
         
         if OPERATING_SYSTEM == "Windows":
-            self.after(201, lambda: self.iconbitmap(path.join(path.dirname(__file__),"assets","pyntexec.ico")))
+            self.window_icon = QIcon(path.join(path.dirname(__file__),"assets","pyntexec.ico"))
         else:
-            self.iconphoto(False, PhotoImage(file= path.join(path.dirname(__file__),"assets","pyntexec.png")))
-
-        self.resizable(False, False)
-        self.frame = ctk.CTkFrame(self)
-        self.frame.pack_propagate(True)
-        self.frame.pack(padx=10, pady=10)
+            self.window_icon = QIcon(path.join(path.dirname(__file__),"assets","pyntexec.png"))
         
-        self.label = ctk.CTkLabel(self.frame, text= self.message, font=("Arial", self.font_size_percent(20)), wraplength=overide_wraplength, justify="center")
-        self.okButton = ctk.CTkButton(self.frame, text="OK", command=self.destroy, width=75, font=("Arial", self.font_size_percent(30)), fg_color="#008800", hover_color="#005200", height=20)
+        self.setWindowIcon(self.window_icon)
+        
+        self.message_label.setText(self.message)
         
         if titleText == "About":
             self.message = f"Version: {version}\n\nPyntexec is a simple GUI for PyInstaller & Nuitka to build Python scripts into executables.\n\nCreated by Nagarafas_MC"
-            self.label.configure(text=self.message)
-            my_image = ctk.CTkImage(light_image=Image.open(path.join(path.dirname(__file__),"assets","pyntexec.png")),
-                                            dark_image=Image.open(path.join(path.dirname(__file__),"assets","pyntexec.png")),
-                                            size=(100, 100))
+            self.message_label.setText(self.message)
+            my_image = QPixmap(path.join(path.dirname(__file__),"assets","pyntexec.png"))
+            my_image = my_image.scaled(110, 110)
 
-            image_label = ctk.CTkLabel(self.frame, image=my_image, text="")  # display image with a CTkLabel
-            image_label.pack(pady=10)
-            
-        self.label.pack(padx=25, pady=5, anchor="center")
-        self.okButton.pack(pady=10, anchor="center", side="bottom")
-        
-        self.focus_set()
-        self.grab_set()
-        
-    def font_size_percent(self, percent: int) -> int:
-        return int(self.font_size -  self.font_size*(percent / 100))
-        
-            
+            self.image_label.setPixmap(my_image)
+    
