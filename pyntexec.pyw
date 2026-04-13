@@ -528,6 +528,7 @@ class Application(QtWidgets.QMainWindow):
             return
         self.clear_console()
         self.set_current_python()
+        self.output_dir = self.output_dir_entry.text()
         
         if self.file_entry.text():
             the_command = " ".join(self.get_command())
@@ -596,8 +597,12 @@ class Application(QtWidgets.QMainWindow):
         self.console.insertPlainText(text)
         self.console.verticalScrollBar().setValue(self.console.verticalScrollBar().maximum())
         
+        mult = 1
+        if self.backend:
+            mult = 3
+        
         if self.current_line_count < 95:
-            self.current_line_count += 1
+            self.current_line_count += 1*mult
             self.progress_bar.setValue(self.current_line_count)
         
     def clear_console(self) -> None:
