@@ -1,7 +1,7 @@
 import sys
 from PyQt6 import QtWidgets, uic
 from PyQt6.QtGui import QIcon
-from PyQt6.QtCore import QSize, QTimer, pyqtSignal, QSettings
+from PyQt6.QtCore import QSize, QTimer, pyqtSignal
 import qdarktheme
 
 import json
@@ -751,8 +751,6 @@ class Application(QtWidgets.QMainWindow):
         self.read_json()
         self.disable_os_specific_elements(self.backend)
         
-        
-    
     def save(self):
         if self.save_path:
             self.write_json()
