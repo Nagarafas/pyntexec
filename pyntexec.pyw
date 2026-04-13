@@ -319,7 +319,7 @@ class Application(QtWidgets.QMainWindow):
         print(self.selected_python)
       
     def show_command(self):
-        AlertWindow.AlertWindow(str(self.get_command())).exec()
+        AlertWindow.AlertWindow("".join(self.get_command())).exec()
       
     def get_command(self) -> list:
         working_dir =  self.output_dir_entry.text() if len(self.output_dir_entry.text()) > 0 else self.working_dir
