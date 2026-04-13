@@ -558,7 +558,13 @@
         <property name="minimumSize">
          <size>
           <width>200</width>
-          <height>30</height>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>40</height>
          </size>
         </property>
         <property name="sizeAdjustPolicy">
@@ -570,13 +576,13 @@
        <widget class="QPushButton" name="expand_button">
         <property name="minimumSize">
          <size>
-          <width>35</width>
+          <width>30</width>
           <height>40</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>35</width>
+          <width>30</width>
           <height>40</height>
          </size>
         </property>
