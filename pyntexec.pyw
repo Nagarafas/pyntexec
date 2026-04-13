@@ -1,9 +1,10 @@
 import sys
 from PyQt6 import QtWidgets, uic
 from PyQt6.QtGui import QIcon
-from PyQt6.QtCore import QSize, QTimer, pyqtSignal
+from PyQt6.QtCore import QSize, QTimer, pyqtSignal, QSettings
 import qdarktheme
 
+import json
 from shutil import rmtree
 from threading import Thread
 from subprocess import Popen, PIPE, check_output
@@ -32,6 +33,7 @@ class Application(QtWidgets.QMainWindow):
         self.version = "3.0.0 - Qt - Experimental"
         
         self.is_expanded = False
+        self.save_path = ""
         
         self.backend = False
         self.data: list = []
@@ -58,15 +60,13 @@ class Application(QtWidgets.QMainWindow):
             self.window_icon = QIcon(path.join(path.dirname(__file__),"assets","pyntexec.png"))
             
         self.spec_path = path.join(path.dirname(__file__),"build")
-        self.font = ("Noto Sans", 16)
-        
+               
         self.window_init()
     
     def window_init(self) -> None:
         uic.loadUi(path.join(self.working_dir_bin,"pyntexec.ui"), self)
         self.setWindowTitle("Pyntexec")
         self.setWindowIcon(self.window_icon)
-        self.window_height = self.height()
         
         # signals
         self.sig_console.connect(self.update_console)
@@ -81,7 +81,9 @@ class Application(QtWidgets.QMainWindow):
         
         app = QtWidgets.QApplication.instance()
         
-        self.actionOpen.triggered.connect(self.choose_file)
+        self.actionOpen.triggered.connect(self.load_options)
+        self.actionSave.triggered.connect(self.save)
+        self.actionSave_as.triggered.connect(self.save_as)
         self.actionExit.triggered.connect(lambda: exit())
         
         # 1. SNAPSHOT THE NATIVE STYLE ENGINE NAME (e.g., 'kvantum', 'breeze')
@@ -586,7 +588,7 @@ class Application(QtWidgets.QMainWindow):
         self.disable_os_specific_elements(bknd=self.backend)
         
     def clear_splash(self) -> None:
-        self.splash_file.setText("Select Splash")
+        self.splash_button.setText("Select Splash")
         self.splash_file = ""
         self.disable_os_specific_elements(bknd=self.backend)
         
@@ -642,6 +644,110 @@ class Application(QtWidgets.QMainWindow):
 
         self.disable_os_specific_elements(self.backend)
 
+    def write_json(self):
+        json_data ={
+            "backend": self.backend,
+            "backend_radio_PyInstaller": self.backend_radio_PyInstaller.isChecked(),
+            "backend_radio_Nuitka": self.backend_radio_Nuitka.isChecked(),
+            "data": self.data,
+            "ico_file": self.ico_file,
+            "splash_file": self.splash_file,
+            "output_dir_entry": self.output_dir_entry.text(),
+            "selected_python": self.selected_python,
+            "excl_bootl_check": self.excl_bootl_check.isChecked(),
+            "one_file_check": self.one_file_check.isChecked(),
+            "name_entry": self.name_entry.text(),
+            "terminal_check": self.terminal_check.isChecked(),
+            "modules_entry": self.modules_entry.text(),
+            "exclusion_entry": self.exclusion_entry.text(),
+            "one_file_dropdown": self.one_file_dropdown.currentText(),
+            "rm_build_check": self.rm_build_check.isChecked(),
+            "tkinter_check": self.tkinter_check.isChecked(),
+            "isolated_check": self.isolated_check.isChecked(),
+            "file_entry": self.file_entry.text()
+        }
+        try:        
+            with open(self.save_path, "w") as file:
+                json.dump(json_data, file, indent=4)
+        except:
+            AlertWindow.AlertWindow(msg="Save failed")
+        else:
+            AlertWindow.AlertWindow(msg="File saved successfully")
+
+    def read_json(self):
+        try:
+            with open(self.save_path, "r") as file:
+                json_data = json.load(file)
+        except:
+            AlertWindow.AlertWindow("Failed to read save file")
+        
+        self.backend = json_data.get("backend")
+        self.backend_radio_PyInstaller.setChecked(json_data.get("backend_radio_PyInstaller"))
+        self.backend_radio_Nuitka.setChecked(json_data.get("backend_radio_Nuitka"))
+        self.data = json_data.get("data")
+        self.ico_file = json_data.get("ico_file")
+        self.splash_file = json_data.get("splash_file")
+        self.output_dir_entry.setText(json_data.get("output_dir_entry"))
+        self.selected_python = json_data.get("selected_python")
+        self.excl_bootl_check.setChecked(json_data.get("excl_bootl_check"))
+        self.one_file_check.setChecked(json_data.get("one_file_check"))
+        self.name_entry.setText(json_data.get("name_entry"))
+        self.terminal_check.setChecked(json_data.get("terminal_check"))
+        self.modules_entry.setText(json_data.get("modules_entry"))
+        self.exclusion_entry.setText(json_data.get("exclusion_entry"))
+        self.one_file_dropdown.setCurrentText(json_data.get("one_file_dropdown"))
+        self.rm_build_check.setChecked(json_data.get("rm_build_check"))
+        self.tkinter_check.setChecked(json_data.get("tkinter_check"))
+        self.isolated_check.setChecked(json_data.get("isolated_check"))
+        self.file_entry.setText(json_data.get("file_entry"))
+
+        for data in self.data:
+            self.update_text_box(data)
+        
+        if self.ico_file:
+            self.ico_button.setText("")
+            self.ico_button.setIcon(QIcon(self.ico_file))
+            self.ico_button.setIconSize(QSize(110, 110))
+        else:
+            self.clear_ico()
+        
+        if self.splash_file:
+            self.splash_button.setText("")
+            self.splash_button.setIcon(QIcon(self.splash_file))
+            self.splash_button.setIconSize(QSize(110, 110))
+        else:
+            self.clear_splash()
+        
+        try:
+            self.python_picker_entry.setCurrentText(self.pythons_dict.fromkeys(self.selected_python))
+        except:
+            self.python_picker_entry.setCurrentIndex(0)
+        
+    def load_options(self):
+        try:
+            self.save_path = crossfiledialog.open_file(title="Select a save file", filter={"pyntexec save files (.pntx)":["*.pntx"]}, start_dir=self.working_dir)
+            self.save_file_name = path.basename(self.save_file_path)
+        except:
+            print("fail")
+        
+        self.read_json()
+        
+        self.disable_os_specific_elements(self.backend)
+    
+    def save(self):
+        if self.save_path:
+            self.write_json()
+        else:
+            self.save_as()
+    
+    def save_as(self):
+        try:
+            self.save_path = f"{crossfiledialog.save_file(title="select save location")}.pntx"
+            self.save_file_name = path.basename(self.save_file_path)
+        except:
+            print("fail")
+        
+        self.write_json()
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
