@@ -659,7 +659,7 @@
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>File</string>
+     <string>&amp;File</string>
     </property>
     <addaction name="actionOpen"/>
     <addaction name="actionSave"/>
@@ -669,11 +669,11 @@
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
-     <string>Help</string>
+     <string>&amp;Help</string>
     </property>
     <widget class="QMenu" name="menuTheme">
      <property name="title">
-      <string>Theme</string>
+      <string>&amp;Theme</string>
      </property>
      <addaction name="actionSystem"/>
      <addaction name="actionBreeze"/>
@@ -688,18 +688,30 @@
    <addaction name="menuHelp"/>
   </widget>
   <action name="actionOpen">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentOpen"/>
+   </property>
    <property name="text">
-    <string>Open</string>
+    <string>&amp;Open</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
    </property>
   </action>
   <action name="actionAbout">
    <property name="text">
-    <string>About</string>
+    <string>&amp;About</string>
    </property>
   </action>
   <action name="actionExit">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::ApplicationExit"/>
+   </property>
    <property name="text">
-    <string>Exit</string>
+    <string>E&amp;xit</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
    </property>
   </action>
   <action name="actionLight">
@@ -707,7 +719,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Light</string>
+    <string>&amp;Light</string>
    </property>
   </action>
   <action name="actionDark">
@@ -715,7 +727,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Dark</string>
+    <string>&amp;Dark</string>
    </property>
   </action>
   <action name="actionSystem">
@@ -726,7 +738,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>System</string>
+    <string>&amp;System</string>
    </property>
   </action>
   <action name="actionBreeze">
@@ -734,17 +746,32 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Breeze</string>
+    <string>&amp;Breeze</string>
    </property>
   </action>
   <action name="actionSave">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentSave"/>
+   </property>
    <property name="text">
-    <string>Save</string>
+    <string>&amp;Save</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
    </property>
   </action>
   <action name="actionSave_as">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentSaveAs"/>
+   </property>
    <property name="text">
-    <string>Save as</string>
+    <string>Save &amp;as</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::WindowShortcut</enum>
    </property>
   </action>
  </widget>
