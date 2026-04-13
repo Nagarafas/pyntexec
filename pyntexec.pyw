@@ -28,12 +28,15 @@ class Application(QtWidgets.QMainWindow):
     sig_finish = pyqtSignal(str)
     sig_ui_enable = pyqtSignal(bool)
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, file_in = "", *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.version = "3.0.0 - Qt - Experimental"
         
         self.is_expanded = False
-        self.save_path = ""
+        try:
+            self.save_path = file_in[1]
+        except:
+            self.save_path = ""
         
         self.backend = False
         self.data: list = []
@@ -60,7 +63,7 @@ class Application(QtWidgets.QMainWindow):
             self.window_icon = QIcon(path.join(path.dirname(__file__),"assets","pyntexec.png"))
             
         self.spec_path = path.join(path.dirname(__file__),"build")
-               
+        
         self.window_init()
     
     def window_init(self) -> None:
@@ -124,6 +127,9 @@ class Application(QtWidgets.QMainWindow):
         self.build_button.pressed.connect(self.build)
         
         self.find_supported_python()
+        
+        if self.save_path:
+            self.load_options(self.save_path)
     
     def choose_file(self) -> None:
         try:
@@ -706,6 +712,11 @@ class Application(QtWidgets.QMainWindow):
         self.isolated_check.setChecked(json_data.get("isolated_check"))
         self.file_entry.setText(json_data.get("file_entry"))
 
+        if self.backend:
+            self.backend_stacked_widget.setCurrentIndex(1)
+        else:
+            self.backend_stacked_widget.setCurrentIndex(0)
+
         self.update_text_box("\n".join(self.data))
         
         if self.ico_file:
@@ -727,16 +738,20 @@ class Application(QtWidgets.QMainWindow):
         except:
             self.python_picker_entry.setCurrentIndex(0)
         
-    def load_options(self):
-        try:
-            self.save_path = crossfiledialog.open_file(title="Select a save file", filter={"pyntexec save files (.pntx)":["*.pntx"]}, start_dir=self.working_dir)
-            self.save_file_name = path.basename(self.save_file_path)
-        except:
-            print("fail")
+    def load_options(self, overide_path = ""):
+        if not overide_path:
+            try:
+                self.save_path = crossfiledialog.open_file(title="Select a save file", filter={"pyntexec save files (.pntx)":["*.pntx"]}, start_dir=self.working_dir)
+                self.save_file_name = path.basename(self.save_file_path)
+            except:
+                print("fail")
+        else:
+            self.save_path = overide_path
         
         self.read_json()
-        
         self.disable_os_specific_elements(self.backend)
+        
+        
     
     def save(self):
         if self.save_path:
@@ -756,6 +771,6 @@ class Application(QtWidgets.QMainWindow):
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     
-    window = Application()
+    window = Application(sys.argv)
     window.show()
     sys.exit(app.exec())
