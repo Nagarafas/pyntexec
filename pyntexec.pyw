@@ -701,8 +701,7 @@ class Application(QtWidgets.QMainWindow):
         self.isolated_check.setChecked(json_data.get("isolated_check"))
         self.file_entry.setText(json_data.get("file_entry"))
 
-        for data in self.data:
-            self.update_text_box(data)
+        self.update_text_box("\n".join(self.data))
         
         if self.ico_file:
             self.ico_button.setText("")
