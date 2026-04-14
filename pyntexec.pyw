@@ -456,6 +456,9 @@ class Application(QtWidgets.QMainWindow):
             
             if self.tkinter_check.isChecked():
                 options.append("--enable-plugin=tk-inter")
+            
+            if self.qt6_check.isChecked():
+                options.append("--enable-plugin=pyqt6")
                 
             if self.isolated_check.isChecked():
                 options.append("--python-flag=isolated")
@@ -674,6 +677,7 @@ class Application(QtWidgets.QMainWindow):
             "one_file_dropdown": self.one_file_dropdown.currentText(),
             "rm_build_check": self.rm_build_check.isChecked(),
             "tkinter_check": self.tkinter_check.isChecked(),
+            "qt6_check": self.qt6_check.isChecked(),
             "isolated_check": self.isolated_check.isChecked(),
             "file_entry": self.file_entry.text()
         }
@@ -709,6 +713,7 @@ class Application(QtWidgets.QMainWindow):
         self.one_file_dropdown.setCurrentText(json_data.get("one_file_dropdown"))
         self.rm_build_check.setChecked(json_data.get("rm_build_check"))
         self.tkinter_check.setChecked(json_data.get("tkinter_check"))
+        self.qt6_check.setChecked(json_data.get("qt6_check"))
         self.isolated_check.setChecked(json_data.get("isolated_check"))
         self.file_entry.setText(json_data.get("file_entry"))
 

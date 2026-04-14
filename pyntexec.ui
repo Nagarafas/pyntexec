@@ -196,7 +196,7 @@
        <item>
         <widget class="QStackedWidget" name="backend_stacked_widget">
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="page_pyinstaller">
           <layout class="QHBoxLayout" name="pyinstaller_layout">
@@ -284,6 +284,13 @@
             <widget class="QCheckBox" name="tkinter_check">
              <property name="text">
               <string>tk-inter Plugin</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="qt6_check">
+             <property name="text">
+              <string>PyQt6 Plugin</string>
              </property>
             </widget>
            </item>
