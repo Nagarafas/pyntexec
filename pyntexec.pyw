@@ -747,7 +747,7 @@ class Application(QtWidgets.QMainWindow):
         if not overide_path:
             try:
                 self.save_path = crossfiledialog.open_file(title="Select a save file", filter={"pyntexec save files (.pntx)":["*.pntx"]}, start_dir=self.working_dir)
-                self.save_file_name = path.basename(self.save_file_path)
+                self.save_file_name = path.basename(self.save_path)
             except:
                 print("fail")
         else:
@@ -765,7 +765,7 @@ class Application(QtWidgets.QMainWindow):
     def save_as(self):
         try:
             self.save_path = f"{crossfiledialog.save_file(title="select save location")}.pntx"
-            self.save_file_name = path.basename(self.save_file_path)
+            self.save_file_name = path.basename(self.save_path)
         except:
             print("fail")
         
