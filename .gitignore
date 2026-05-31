@@ -4,8 +4,7 @@ __pycache__/
 dist/
 build/
 .idea
-PNG101.png
-PNG102.png
-pyntexecSFXcomment.txt
 .vscode
-.gitignore
+*.pntx
+*.exe
+*.xml

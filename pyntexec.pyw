@@ -7,13 +7,14 @@ import qdarktheme
 import json
 from shutil import rmtree
 from threading import Thread
-from subprocess import Popen, PIPE, check_output
+from subprocess import Popen, PIPE, check_output, list2cmdline
 from os import path
 from platform import system as operating_system
 import AlertWindow
 import confirmationWindow as confw
 from os import getcwd
 from sys import version_info, executable
+import shlex
 
 VERSION_INFO = version_info 
 OPERATING_SYSTEM= operating_system()
@@ -98,7 +99,7 @@ class Application(QtWidgets.QMainWindow):
         self.actionLight.triggered.connect(lambda: self.change_theme("light"))
         self.actionDark.triggered.connect(lambda: self.change_theme("dark"))
         self.actionSystem.triggered.connect(lambda: self.change_theme("system"))
-        self.actionBreeze.triggered.connect(lambda: self.change_theme("breeze"))
+        self.actionFusion.triggered.connect(lambda: self.change_theme("Fusion"))
         
         self.actionAbout.triggered.connect(lambda: AlertWindow.AlertWindow(titleText="About", version=self.version).exec())
         
@@ -130,6 +131,12 @@ class Application(QtWidgets.QMainWindow):
         
         if self.save_path:
             self.load_options(self.save_path)
+  
+    def get_copy_pasteable(self, cmd_list: list) -> str:
+        if OPERATING_SYSTEM == "Windows":
+            return list2cmdline(cmd_list)
+        else:
+            return shlex.join(cmd_list)
     
     def choose_file(self) -> None:
         try:
@@ -182,7 +189,7 @@ class Application(QtWidgets.QMainWindow):
             self.actionLight.setChecked(True)
             self.actionDark.setChecked(False)
             self.actionSystem.setChecked(False)
-            self.actionBreeze.setChecked(False)
+            self.actionFusion.setChecked(False)
             
         elif theme == "dark":
             app.setStyleSheet(qdarktheme.load_stylesheet("dark"))
@@ -190,16 +197,16 @@ class Application(QtWidgets.QMainWindow):
             self.actionLight.setChecked(False)
             self.actionDark.setChecked(True)
             self.actionSystem.setChecked(False)
-            self.actionBreeze.setChecked(False)
+            self.actionFusion.setChecked(False)
             
-        elif theme == "breeze":
+        elif theme == "Fusion":
             app.setStyleSheet("")
-            app.setStyle(theme)
+            app.setStyle("Fusion")
             
             self.actionLight.setChecked(False)
             self.actionDark.setChecked(False)
             self.actionSystem.setChecked(False)
-            self.actionBreeze.setChecked(True)
+            self.actionFusion.setChecked(True)
             
         else:
             app.setStyleSheet("")
@@ -209,7 +216,7 @@ class Application(QtWidgets.QMainWindow):
             self.actionLight.setChecked(False)
             self.actionDark.setChecked(False)
             self.actionSystem.setChecked(True)
-            self.actionBreeze.setChecked(False)
+            self.actionFusion.setChecked(False)
             
     def find_supported_python(self):
         #find all python installations and add them to a combobox
@@ -241,12 +248,12 @@ class Application(QtWidgets.QMainWindow):
             elif VERSION_INFO.major <= 3 and VERSION_INFO.minor <=12 and path.isfile(path.join(self.working_dir,"pyntexec.pyw")):
                 return
             elif "python3.12" in self.pythons_dict:
-                self.python_picker_entry.set("python3.12")
-                self.selected_python = self.pythons_dict[self.python_picker_entry.get()]
+                self.python_picker_entry.setCurrentText("python3.12")
+                self.selected_python = self.pythons_dict[self.python_picker_entry.currentText()]
                 print(self.selected_python)
             else:
-                self.python_picker_entry.set(iter(self.pythons_dict))
-                self.selected_python = self.python_picker_entry.get()
+                self.python_picker_entry.setCurrentIndex(0)
+                self.selected_python = self.python_picker_entry.currentText()
                 print(f"Changed selected python to: {self.selected_python}")
                 
         else:
@@ -327,7 +334,8 @@ class Application(QtWidgets.QMainWindow):
         print(self.selected_python)
       
     def show_command(self):
-        AlertWindow.AlertWindow("".join(self.get_command())).exec()
+        command = self.get_copy_pasteable(self.get_command())
+        AlertWindow.AlertWindow(command).exec()
       
     def get_command(self) -> list:
         working_dir =  self.output_dir_entry.text() if len(self.output_dir_entry.text()) > 0 else self.working_dir
@@ -343,10 +351,10 @@ class Application(QtWidgets.QMainWindow):
                 options.append("--contents-directory=.")
             
             if self.ico_file:
-                options.append(f'--icon="{self.ico_file}"')
+                options.append(f'--icon={self.ico_file}')
             
             if self.name_entry.text():
-                options.append(f'--name="{self.name_entry.text()}"')
+                options.append(f'--name={self.name_entry.text()}')
                 
             if self.terminal_check.isChecked():
                 options.append("--console")
@@ -354,21 +362,21 @@ class Application(QtWidgets.QMainWindow):
                 options.append("--windowed")
             
             if self.splash_file:
-                options.append(f'--splash="{self.splash_file}"')
+                options.append(f'--splash={self.splash_file}')
             
             try:
                 if self.data:
                     for data in self.data:
                         if path.isfile(data):
                             if path.dirname(data) == path.dirname(self.file_entry.text()):
-                                options.append(f'--add-data="{data}:."')
+                                options.append(f'--add-data={data}:.')
                             elif path.dirname(self.file_entry.text()) in path.dirname(data):
                                 split_path = "".join(path.abspath(data).split(path.dirname(self.file_entry.text())))
-                                options.append(f'--add-data="{data}:{split_path}"')
+                                options.append(f'--add-data={data}:{split_path}')
                             else:
-                                options.append(f'--add-data="{data}:."')
+                                options.append(f'--add-data={data}:.')
                         else:
-                            options.append(f'--add-data="{data}:{path.basename(data)}"')
+                            options.append(f'--add-data={data}:{path.basename(data)}')
             except:
                 AlertWindow.AlertWindow("no python file selected").exec()
                 return []
@@ -378,20 +386,20 @@ class Application(QtWidgets.QMainWindow):
             if mdl_entry_text:
                 modules = mdl_entry_text.split(",") if "," in mdl_entry_text else mdl_entry_text.split(" ")
                 for module in modules:
-                    options.append(f'--hidden-import="{module.strip()}"')
+                    options.append(f'--hidden-import={module.strip()}')
             
             excl_entry_text = self.exclusion_entry.text()
             if excl_entry_text:
                 exclusions = excl_entry_text.slpit(",") if "," in excl_entry_text else excl_entry_text.split(" ")
                 for exclusion in exclusions:
-                    options.append(f'--exclude-module="{exclusion.strip()}"')
+                    options.append(f'--exclude-module={exclusion.strip()}')
             
             if len(self.output_dir_entry.text()) > 0:
-                options.append(f'--distpath="{working_dir}/dist"')
+                options.append(f'--distpath={path.join(working_dir, "dist")}')
             
             options.append("--clean")
             
-            return [f'{self.selected_python} -m PyInstaller "{self.file_entry.text()}"', f'--specpath="{self.spec_path}"'] + options
+            return [self.selected_python, "-m", "PyInstaller", {self.file_entry.text()}, f'--specpath={self.spec_path}'] + options
             
         else:
             options = [f"--{self.one_file_dropdown.currentText()}" if not "onefile-" in self.one_file_dropdown.currentText() else f"--onefile --{self.one_file_dropdown.currentText()} --deployment"]
@@ -406,38 +414,41 @@ class Application(QtWidgets.QMainWindow):
                 options.append("--remove-output")
             
             if self.name_entry.text():
-                options.append(f'--output-filename="{self.name_entry.text()}"')
-                options.append(f'--output-dir="{working_dir}/dist/{path.basename(self.name_entry.text())}"')
+                options.append(f'--output-filename={self.name_entry.text()}')
+                options.append(f'--output-dir={path.join(working_dir, "dist", path.basename(self.name_entry.text()))}')
                 
             elif options[0] == "--standalone":
-                options.append(f'--output-dir="{working_dir}/dist"')
+                options.append(f'--output-dir={path.join(working_dir, "dist")}')
             else:
-                options.append(f'--output-dir="{working_dir}/dist/{path.basename(self.file_entry.text()).split(".")[0]}"')
+                options.append(f'--output-dir={path.join(working_dir, "dist", path.basename(self.file_entry.text()).split(".")[0] )}')
                 
             if self.ico_file:
                 if OPERATING_SYSTEM == "Windows":
                     if self.ico_file.endswith(".ico"):
-                        options.append(f'--windows-icon-from-ico="{self.ico_file}"')
+                        options.append(f'--windows-icon-from-ico={self.ico_file}')
                     else:
-                        options.append(f'--windows-icon-template-exe="{self.ico_file}"')
+                        options.append(f'--windows-icon-template-exe={self.ico_file}')
                 elif OPERATING_SYSTEM == "Linux":
-                    options.append(f'--linux-icon="{self.ico_file}"')
+                    options.append(f'--linux-icon={self.ico_file}')
             
             if self.splash_file:
-                options.append(f'--onefile-windows-splash-screen-image="{self.splash_file}"')
+                options.append(f'--onefile-windows-splash-screen-image={self.splash_file}')
             try:
                 if self.data:
                     for data in self.data:
                         if path.isfile(data):
                             if path.dirname(data) == path.dirname(self.file_entry.text()):
-                                options.append(f'--include-data-files="{data}=."')
+                                options.append(f'--include-data-files={data}={path.basename(data)}')
+                                
                             elif path.dirname(self.file_entry.text()) in path.dirname(data):
-                                split_path = "".join(path.abspath(data).split(path.dirname(self.file_entry.text())))
-                                options.append(f'--include-data-files="{data}={split_path}"')
+                                base_dir = path.dirname(self.file_entry.text())
+                                split_path_relative = path.relpath(data, base_dir)
+                                options.append(f'--include-data-files={data}={split_path_relative}')
+                                
                             else:
-                                options.append(f'--include-data-files="{data}=."')
+                                options.append(f'--include-data-files={data}={path.basename(data)}')
                         else:
-                            options.append(f'--include-data-dir="{data}"="{path.basename(data)}"')
+                            options.append(f'--include-data-dir={data}={path.basename(data)}')
             except:
                 AlertWindow.AlertWindow("no python file selected").exec()
                 return []
@@ -446,13 +457,13 @@ class Application(QtWidgets.QMainWindow):
             if mdl_entry_text:
                 modules = mdl_entry_text.split(",") if "," in mdl_entry_text else mdl_entry_text.split(" ")
                 for module in modules:
-                    options.append(f'--include-package-data="{module.strip()}"')
+                    options.append(f'--include-package-data={module.strip()}')
                     
             excl_entry_text = self.exclusion_entry.text()
             if excl_entry_text:
                 exclusions = excl_entry_text.slpit(",") if "," in excl_entry_text else excl_entry_text.split(" ")
                 for exclusion in exclusions:
-                    options.append(f'--nofollow-import-to="{exclusion.strip()}"')
+                    options.append(f'--nofollow-import-to={exclusion.strip()}')
             
             if self.tkinter_check.isChecked():
                 options.append("--enable-plugin=tk-inter")
@@ -463,7 +474,7 @@ class Application(QtWidgets.QMainWindow):
             if self.isolated_check.isChecked():
                 options.append("--python-flag=isolated")
                                         
-            return [f'{self.selected_python} -m nuitka --main="{self.file_entry.text()}"'] + options
+            return [self.selected_python, "-m", "nuitka",f"--main={self.file_entry.text()}"] + options
             
     def add_data(self, datatype : str) -> None:
         if datatype == "folder":
@@ -494,7 +505,7 @@ class Application(QtWidgets.QMainWindow):
         # self.build_button.setEnabled(False)
         self.sig_ui_enable.emit(False)
         
-        process = Popen(command, shell=True, stdout=PIPE, stderr=PIPE, text=True)
+        process = Popen(command, shell=False, stdout=PIPE, stderr=PIPE, text=True)
         
         if status_mode == "build":
             self.sig_status.emit("Status: Building...")
@@ -540,8 +551,9 @@ class Application(QtWidgets.QMainWindow):
         self.output_dir = self.output_dir_entry.text()
         
         if self.file_entry.text():
-            the_command = " ".join(self.get_command())
-            print(f"Running command: {the_command}")
+            the_command = self.get_command()
+            copy_pasteable = self.get_copy_pasteable(the_command)
+            print(f"Running command: {copy_pasteable}")
             Thread(target=self.run_process, args=(the_command,), daemon=True).start()
         else:
             AlertWindow.AlertWindow("Please select a Python file to build").exec()
@@ -695,53 +707,53 @@ class Application(QtWidgets.QMainWindow):
                 json_data = json.load(file)
         except:
             AlertWindow.AlertWindow("Failed to read save file")
-        
-        self.backend = json_data.get("backend")
-        self.backend_radio_PyInstaller.setChecked(json_data.get("backend_radio_PyInstaller"))
-        self.backend_radio_Nuitka.setChecked(json_data.get("backend_radio_Nuitka"))
-        self.data = json_data.get("data")
-        self.ico_file = json_data.get("ico_file")
-        self.splash_file = json_data.get("splash_file")
-        self.output_dir_entry.setText(json_data.get("output_dir_entry"))
-        self.selected_python = json_data.get("selected_python")
-        self.excl_bootl_check.setChecked(json_data.get("excl_bootl_check"))
-        self.one_file_check.setChecked(json_data.get("one_file_check"))
-        self.name_entry.setText(json_data.get("name_entry"))
-        self.terminal_check.setChecked(json_data.get("terminal_check"))
-        self.modules_entry.setText(json_data.get("modules_entry"))
-        self.exclusion_entry.setText(json_data.get("exclusion_entry"))
-        self.one_file_dropdown.setCurrentText(json_data.get("one_file_dropdown"))
-        self.rm_build_check.setChecked(json_data.get("rm_build_check"))
-        self.tkinter_check.setChecked(json_data.get("tkinter_check"))
-        self.qt6_check.setChecked(json_data.get("qt6_check"))
-        self.isolated_check.setChecked(json_data.get("isolated_check"))
-        self.file_entry.setText(json_data.get("file_entry"))
+        else:
+            self.backend = json_data.get("backend")
+            self.backend_radio_PyInstaller.setChecked(json_data.get("backend_radio_PyInstaller"))
+            self.backend_radio_Nuitka.setChecked(json_data.get("backend_radio_Nuitka"))
+            self.data = json_data.get("data")
+            self.ico_file = json_data.get("ico_file")
+            self.splash_file = json_data.get("splash_file")
+            self.output_dir_entry.setText(json_data.get("output_dir_entry"))
+            self.selected_python = json_data.get("selected_python")
+            self.excl_bootl_check.setChecked(json_data.get("excl_bootl_check"))
+            self.one_file_check.setChecked(json_data.get("one_file_check"))
+            self.name_entry.setText(json_data.get("name_entry"))
+            self.terminal_check.setChecked(json_data.get("terminal_check"))
+            self.modules_entry.setText(json_data.get("modules_entry"))
+            self.exclusion_entry.setText(json_data.get("exclusion_entry"))
+            self.one_file_dropdown.setCurrentText(json_data.get("one_file_dropdown"))
+            self.rm_build_check.setChecked(json_data.get("rm_build_check"))
+            self.tkinter_check.setChecked(json_data.get("tkinter_check"))
+            self.qt6_check.setChecked(json_data.get("qt6_check"))
+            self.isolated_check.setChecked(json_data.get("isolated_check"))
+            self.file_entry.setText(json_data.get("file_entry"))
 
-        if self.backend:
-            self.backend_stacked_widget.setCurrentIndex(1)
-        else:
-            self.backend_stacked_widget.setCurrentIndex(0)
+            if self.backend:
+                self.backend_stacked_widget.setCurrentIndex(1)
+            else:
+                self.backend_stacked_widget.setCurrentIndex(0)
 
-        self.update_text_box("\n".join(self.data))
-        
-        if self.ico_file:
-            self.ico_button.setText("")
-            self.ico_button.setIcon(QIcon(self.ico_file))
-            self.ico_button.setIconSize(QSize(110, 110))
-        else:
-            self.clear_ico()
-        
-        if self.splash_file:
-            self.splash_button.setText("")
-            self.splash_button.setIcon(QIcon(self.splash_file))
-            self.splash_button.setIconSize(QSize(110, 110))
-        else:
-            self.clear_splash()
-        
-        try:
-            self.python_picker_entry.setCurrentText(self.pythons_dict.fromkeys(self.selected_python))
-        except:
-            self.python_picker_entry.setCurrentIndex(0)
+            self.update_text_box("\n".join(self.data))
+            
+            if self.ico_file:
+                self.ico_button.setText("")
+                self.ico_button.setIcon(QIcon(self.ico_file))
+                self.ico_button.setIconSize(QSize(110, 110))
+            else:
+                self.clear_ico()
+            
+            if self.splash_file:
+                self.splash_button.setText("")
+                self.splash_button.setIcon(QIcon(self.splash_file))
+                self.splash_button.setIconSize(QSize(110, 110))
+            else:
+                self.clear_splash()
+            
+            try:
+                self.python_picker_entry.setCurrentText(self.pythons_dict.fromkeys(self.selected_python))
+            except:
+                self.python_picker_entry.setCurrentIndex(0)
         
     def load_options(self, overide_path = ""):
         if not overide_path:

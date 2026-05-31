@@ -683,7 +683,7 @@
       <string>&amp;Theme</string>
      </property>
      <addaction name="actionSystem"/>
-     <addaction name="actionBreeze"/>
+     <addaction name="actionFusion"/>
      <addaction name="actionDark"/>
      <addaction name="actionLight"/>
     </widget>
@@ -748,12 +748,12 @@
     <string>&amp;System</string>
    </property>
   </action>
-  <action name="actionBreeze">
+  <action name="actionFusion">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>&amp;Breeze</string>
+    <string>&amp;Fusion</string>
    </property>
   </action>
   <action name="actionSave">
